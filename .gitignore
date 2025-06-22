@@ -10,7 +10,13 @@
 /obj
 /out
 BetSpotHostSim.X/.generated_files
-
+BetSpotHostSim.X/build
 # eide template
 *.ept
 *.eide-template
+
+# mplabx 
+src/config/default/harmony-manifest-success.yml
+BetSpotHostSim.X/nbproject/Makefile-genesis.properties
+BetSpotHostSim.X/mcc-manifest-generated-success.yml
+BetSpotHostSim.X/mcc-manifest-autosave.yml
