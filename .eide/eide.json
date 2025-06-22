@@ -4,7 +4,8 @@
   "dependenceList": [],
   "srcDirs": [
     "src",
-    "BetSpotHostSim.X"
+    "BetSpotHostSim.X",
+    "../common/third_party/RTT"
   ],
   "virtualFolder": {
     "name": "<virtual_root>",

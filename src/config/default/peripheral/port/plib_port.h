@@ -65,6 +65,18 @@
 // *****************************************************************************
 // *****************************************************************************
 
+/*** Macros for SLAVE1_TX pin ***/
+#define SLAVE1_TX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
+#define SLAVE1_TX_PIN                  PORT_PIN_PB08
+
+/*** Macros for SLAVE1_TE pin ***/
+#define SLAVE1_TE_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 10U)) & 0x01U)
+#define SLAVE1_TE_PIN                  PORT_PIN_PB10
+
+/*** Macros for SLAVE1_RX pin ***/
+#define SLAVE1_RX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 11U)) & 0x01U)
+#define SLAVE1_RX_PIN                  PORT_PIN_PB11
+
 /*** Macros for DIAG_SW0 pin ***/
 #define DIAG_SW0_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 14U)) & 0x01U)
 #define DIAG_SW0_PIN                  PORT_PIN_PA14
@@ -72,6 +84,18 @@
 /*** Macros for DIAG_SW1 pin ***/
 #define DIAG_SW1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 15U)) & 0x01U)
 #define DIAG_SW1_PIN                  PORT_PIN_PA15
+
+/*** Macros for HOST_TX pin ***/
+#define HOST_TX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 16U)) & 0x01U)
+#define HOST_TX_PIN                  PORT_PIN_PA16
+
+/*** Macros for HOST_TE pin ***/
+#define HOST_TE_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 18U)) & 0x01U)
+#define HOST_TE_PIN                  PORT_PIN_PA18
+
+/*** Macros for HOST_RX pin ***/
+#define HOST_RX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 19U)) & 0x01U)
+#define HOST_RX_PIN                  PORT_PIN_PA19
 
 /*** Macros for LED_RED pin ***/
 #define LED_RED_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 16U))
@@ -107,6 +131,18 @@
 /*** Macros for USB_DP pin ***/
 #define USB_DP_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 25U)) & 0x01U)
 #define USB_DP_PIN                  PORT_PIN_PA25
+
+/*** Macros for SLAVE0_TE pin ***/
+#define SLAVE0_TE_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 0U)) & 0x01U)
+#define SLAVE0_TE_PIN                  PORT_PIN_PB00
+
+/*** Macros for SLAVE0_RX pin ***/
+#define SLAVE0_RX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 1U)) & 0x01U)
+#define SLAVE0_RX_PIN                  PORT_PIN_PB01
+
+/*** Macros for SLAVE0_TX pin ***/
+#define SLAVE0_TX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 2U)) & 0x01U)
+#define SLAVE0_TX_PIN                  PORT_PIN_PB02
 
 // *****************************************************************************
 /* PORT Group

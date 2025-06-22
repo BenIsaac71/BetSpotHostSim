@@ -256,7 +256,13 @@ void SYS_Initialize ( void* data )
 
 
 
+    SERCOM1_USART_Initialize();
+
     EVSYS_Initialize();
+
+    SERCOM5_USART_Initialize();
+
+    SERCOM4_USART_Initialize();
 
 
     /* MISRAC 2012 deviation block start */

@@ -170,10 +170,31 @@ void CLOCK_Initialize (void)
 
     /* MISRAC 2012 deviation block end */
 
+    /* Selection of the Generator and write Lock for SERCOM1_CORE */
+    GCLK_REGS->GCLK_PCHCTRL[8] = GCLK_PCHCTRL_GEN(0x1U)  | GCLK_PCHCTRL_CHEN_Msk;
+
+    while ((GCLK_REGS->GCLK_PCHCTRL[8] & GCLK_PCHCTRL_CHEN_Msk) != GCLK_PCHCTRL_CHEN_Msk)
+    {
+        /* Wait for synchronization */
+    }
     /* Selection of the Generator and write Lock for USB */
     GCLK_REGS->GCLK_PCHCTRL[10] = GCLK_PCHCTRL_GEN(0x3U)  | GCLK_PCHCTRL_CHEN_Msk;
 
     while ((GCLK_REGS->GCLK_PCHCTRL[10] & GCLK_PCHCTRL_CHEN_Msk) != GCLK_PCHCTRL_CHEN_Msk)
+    {
+        /* Wait for synchronization */
+    }
+    /* Selection of the Generator and write Lock for SERCOM4_CORE */
+    GCLK_REGS->GCLK_PCHCTRL[34] = GCLK_PCHCTRL_GEN(0x1U)  | GCLK_PCHCTRL_CHEN_Msk;
+
+    while ((GCLK_REGS->GCLK_PCHCTRL[34] & GCLK_PCHCTRL_CHEN_Msk) != GCLK_PCHCTRL_CHEN_Msk)
+    {
+        /* Wait for synchronization */
+    }
+    /* Selection of the Generator and write Lock for SERCOM5_CORE */
+    GCLK_REGS->GCLK_PCHCTRL[35] = GCLK_PCHCTRL_GEN(0x1U)  | GCLK_PCHCTRL_CHEN_Msk;
+
+    while ((GCLK_REGS->GCLK_PCHCTRL[35] & GCLK_PCHCTRL_CHEN_Msk) != GCLK_PCHCTRL_CHEN_Msk)
     {
         /* Wait for synchronization */
     }
@@ -182,10 +203,13 @@ void CLOCK_Initialize (void)
     MCLK_REGS->MCLK_AHBMASK = 0xffffffU;
 
     /* Configure the APBA Bridge Clocks */
-    MCLK_REGS->MCLK_APBAMASK = 0x7ffU;
+    MCLK_REGS->MCLK_APBAMASK = 0x27ffU;
 
     /* Configure the APBB Bridge Clocks */
     MCLK_REGS->MCLK_APBBMASK = 0x18057U;
+
+    /* Configure the APBD Bridge Clocks */
+    MCLK_REGS->MCLK_APBDMASK = 0x3U;
 
 
 }

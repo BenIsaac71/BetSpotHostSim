@@ -49,6 +49,7 @@
 #include <stddef.h>
 #include <stdbool.h>
 #include "peripheral/nvmctrl/plib_nvmctrl.h"
+#include "peripheral/sercom/usart/plib_sercom1_usart.h"
 #include "peripheral/evsys/plib_evsys.h"
 #include "system/command/sys_command.h"
 #include "peripheral/port/plib_port.h"
@@ -57,6 +58,8 @@
 #include "peripheral/cmcc/plib_cmcc.h"
 #include "usb/usb_chapter_9.h"
 #include "usb/usb_device.h"
+#include "peripheral/sercom/usart/plib_sercom5_usart.h"
+#include "peripheral/sercom/usart/plib_sercom4_usart.h"
 #include "usb/usb_device_cdc.h"
 #include "usb/usb_cdc.h"
 #include "driver/usb/usbfsv1/drv_usbfsv1.h"
