@@ -2,12 +2,12 @@
 
 manifest_file_version: 1.0.0
 project: BetSpotHostSim
-creation_date: 2025-06-21T18:07:49.158-04:00[America/La_Paz]
+creation_date: 2025-06-21T20:19:06.806-04:00[America/La_Paz]
 operating_system: Windows 10
 mcc_mode: IDE
 mcc_mode_version: v6.20
 device_name: ATSAMD51J19A
-compiler: XC32 4.60
+compiler: ARM 10.3.1
 mcc_version: 5.5.1
 mcc_core_version: 5.7.1
 content_manager_version: 5.0.1
