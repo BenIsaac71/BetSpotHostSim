@@ -7,6 +7,11 @@
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
           <logicalFolder name="driver" displayName="driver" projectFiles="true">
+            <logicalFolder name="usart" displayName="usart" projectFiles="true">
+              <itemPath>../src/config/default/driver/usart/src/drv_usart_local.h</itemPath>
+              <itemPath>../src/config/default/driver/usart/drv_usart.h</itemPath>
+              <itemPath>../src/config/default/driver/usart/drv_usart_definitions.h</itemPath>
+            </logicalFolder>
             <logicalFolder name="usb" displayName="usb" projectFiles="true">
               <logicalFolder name="usbfsv1" displayName="usbfsv1" projectFiles="true">
                 <logicalFolder name="src" displayName="src" projectFiles="true">
@@ -294,6 +299,9 @@
       <logicalFolder name="config" displayName="config" projectFiles="true">
         <logicalFolder name="default" displayName="default" projectFiles="true">
           <logicalFolder name="driver" displayName="driver" projectFiles="true">
+            <logicalFolder name="usart" displayName="usart" projectFiles="true">
+              <itemPath>../src/config/default/driver/usart/src/drv_usart.c</itemPath>
+            </logicalFolder>
             <logicalFolder name="usb" displayName="usb" projectFiles="true">
               <logicalFolder name="usbfsv1" displayName="usbfsv1" projectFiles="true">
                 <logicalFolder name="src" displayName="src" projectFiles="true">

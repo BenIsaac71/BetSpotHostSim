@@ -62,6 +62,7 @@
 #include "peripheral/sercom/usart/plib_sercom4_usart.h"
 #include "usb/usb_device_cdc.h"
 #include "usb/usb_cdc.h"
+#include "driver/usart/drv_usart.h"
 #include "driver/usb/usbfsv1/drv_usbfsv1.h"
 #include "system/console/sys_console.h"
 #include "system/console/src/sys_console_usb_cdc_definitions.h"
@@ -207,6 +208,9 @@ typedef struct
 
     SYS_MODULE_OBJ  usbDevObject0;
 
+    SYS_MODULE_OBJ  drvUsart2;
+    SYS_MODULE_OBJ  drvUsart1;
+    SYS_MODULE_OBJ  drvUsart0;
     SYS_MODULE_OBJ  drvUSBFSV1Object;
 
     SYS_MODULE_OBJ  sysConsole0;

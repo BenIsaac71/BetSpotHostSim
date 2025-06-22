@@ -73,6 +73,7 @@
 
 
 
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Driver Initialization Data
@@ -83,6 +84,147 @@
 /* MISRA C-2012 Rule 11.1 - Deviation record ID - H3_MISRAC_2012_R_11_1_DR_1 */
 /* MISRA C-2012 Rule 11.3 - Deviation record ID - H3_MISRAC_2012_R_11_3_DR_1 */
 /* MISRA C-2012 Rule 11.8 - Deviation record ID - H3_MISRAC_2012_R_11_8_DR_1 */
+// <editor-fold defaultstate="collapsed" desc="DRV_USART Instance 2 Initialization Data">
+
+static DRV_USART_CLIENT_OBJ drvUSART2ClientObjPool[DRV_USART_CLIENTS_NUMBER_IDX2];
+
+
+static const DRV_USART_PLIB_INTERFACE drvUsart2PlibAPI = {
+    .readCallbackRegister = (DRV_USART_PLIB_READ_CALLBACK_REG)SERCOM4_USART_ReadCallbackRegister,
+    .read_t = (DRV_USART_PLIB_READ)SERCOM4_USART_Read,
+    .readIsBusy = (DRV_USART_PLIB_READ_IS_BUSY)SERCOM4_USART_ReadIsBusy,
+    .readCountGet = (DRV_USART_PLIB_READ_COUNT_GET)SERCOM4_USART_ReadCountGet,
+    .readAbort = (DRV_USART_PLIB_READ_ABORT)SERCOM4_USART_ReadAbort,
+    .writeCallbackRegister = (DRV_USART_PLIB_WRITE_CALLBACK_REG)SERCOM4_USART_WriteCallbackRegister,
+    .write_t = (DRV_USART_PLIB_WRITE)SERCOM4_USART_Write,
+    .writeIsBusy = (DRV_USART_PLIB_WRITE_IS_BUSY)SERCOM4_USART_WriteIsBusy,
+    .writeCountGet = (DRV_USART_PLIB_WRITE_COUNT_GET)SERCOM4_USART_WriteCountGet,
+    .errorGet = (DRV_USART_PLIB_ERROR_GET)SERCOM4_USART_ErrorGet,
+    .serialSetup = (DRV_USART_PLIB_SERIAL_SETUP)SERCOM4_USART_SerialSetup
+};
+
+static const uint32_t drvUsart2remapDataWidth[] = { 0x5, 0x6, 0x7, 0x0, 0x1 };
+static const uint32_t drvUsart2remapParity[] = { 0x2, 0x0, 0x80000, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU };
+static const uint32_t drvUsart2remapStopBits[] = { 0x0, 0xFFFFFFFFU, 0x40 };
+static const uint32_t drvUsart2remapError[] = { 0x4, 0x0, 0x2 };
+
+static const DRV_USART_INIT drvUsart2InitData =
+{
+    .usartPlib = &drvUsart2PlibAPI,
+
+    /* USART Number of clients */
+    .numClients = DRV_USART_CLIENTS_NUMBER_IDX2,
+
+    /* USART Client Objects Pool */
+    .clientObjPool = (uintptr_t)&drvUSART2ClientObjPool[0],
+
+
+    .remapDataWidth = drvUsart2remapDataWidth,
+
+    .remapParity = drvUsart2remapParity,
+
+    .remapStopBits = drvUsart2remapStopBits,
+
+    .remapError = drvUsart2remapError,
+
+    .dataWidth = DRV_USART_DATA_8_BIT,
+};
+
+// </editor-fold>
+// <editor-fold defaultstate="collapsed" desc="DRV_USART Instance 1 Initialization Data">
+
+static DRV_USART_CLIENT_OBJ drvUSART1ClientObjPool[DRV_USART_CLIENTS_NUMBER_IDX1];
+
+
+static const DRV_USART_PLIB_INTERFACE drvUsart1PlibAPI = {
+    .readCallbackRegister = (DRV_USART_PLIB_READ_CALLBACK_REG)SERCOM5_USART_ReadCallbackRegister,
+    .read_t = (DRV_USART_PLIB_READ)SERCOM5_USART_Read,
+    .readIsBusy = (DRV_USART_PLIB_READ_IS_BUSY)SERCOM5_USART_ReadIsBusy,
+    .readCountGet = (DRV_USART_PLIB_READ_COUNT_GET)SERCOM5_USART_ReadCountGet,
+    .readAbort = (DRV_USART_PLIB_READ_ABORT)SERCOM5_USART_ReadAbort,
+    .writeCallbackRegister = (DRV_USART_PLIB_WRITE_CALLBACK_REG)SERCOM5_USART_WriteCallbackRegister,
+    .write_t = (DRV_USART_PLIB_WRITE)SERCOM5_USART_Write,
+    .writeIsBusy = (DRV_USART_PLIB_WRITE_IS_BUSY)SERCOM5_USART_WriteIsBusy,
+    .writeCountGet = (DRV_USART_PLIB_WRITE_COUNT_GET)SERCOM5_USART_WriteCountGet,
+    .errorGet = (DRV_USART_PLIB_ERROR_GET)SERCOM5_USART_ErrorGet,
+    .serialSetup = (DRV_USART_PLIB_SERIAL_SETUP)SERCOM5_USART_SerialSetup
+};
+
+static const uint32_t drvUsart1remapDataWidth[] = { 0x5, 0x6, 0x7, 0x0, 0x1 };
+static const uint32_t drvUsart1remapParity[] = { 0x2, 0x0, 0x80000, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU };
+static const uint32_t drvUsart1remapStopBits[] = { 0x0, 0xFFFFFFFFU, 0x40 };
+static const uint32_t drvUsart1remapError[] = { 0x4, 0x0, 0x2 };
+
+static const DRV_USART_INIT drvUsart1InitData =
+{
+    .usartPlib = &drvUsart1PlibAPI,
+
+    /* USART Number of clients */
+    .numClients = DRV_USART_CLIENTS_NUMBER_IDX1,
+
+    /* USART Client Objects Pool */
+    .clientObjPool = (uintptr_t)&drvUSART1ClientObjPool[0],
+
+
+    .remapDataWidth = drvUsart1remapDataWidth,
+
+    .remapParity = drvUsart1remapParity,
+
+    .remapStopBits = drvUsart1remapStopBits,
+
+    .remapError = drvUsart1remapError,
+
+    .dataWidth = DRV_USART_DATA_8_BIT,
+};
+
+// </editor-fold>
+// <editor-fold defaultstate="collapsed" desc="DRV_USART Instance 0 Initialization Data">
+
+static DRV_USART_CLIENT_OBJ drvUSART0ClientObjPool[DRV_USART_CLIENTS_NUMBER_IDX0];
+
+
+static const DRV_USART_PLIB_INTERFACE drvUsart0PlibAPI = {
+    .readCallbackRegister = (DRV_USART_PLIB_READ_CALLBACK_REG)SERCOM1_USART_ReadCallbackRegister,
+    .read_t = (DRV_USART_PLIB_READ)SERCOM1_USART_Read,
+    .readIsBusy = (DRV_USART_PLIB_READ_IS_BUSY)SERCOM1_USART_ReadIsBusy,
+    .readCountGet = (DRV_USART_PLIB_READ_COUNT_GET)SERCOM1_USART_ReadCountGet,
+    .readAbort = (DRV_USART_PLIB_READ_ABORT)SERCOM1_USART_ReadAbort,
+    .writeCallbackRegister = (DRV_USART_PLIB_WRITE_CALLBACK_REG)SERCOM1_USART_WriteCallbackRegister,
+    .write_t = (DRV_USART_PLIB_WRITE)SERCOM1_USART_Write,
+    .writeIsBusy = (DRV_USART_PLIB_WRITE_IS_BUSY)SERCOM1_USART_WriteIsBusy,
+    .writeCountGet = (DRV_USART_PLIB_WRITE_COUNT_GET)SERCOM1_USART_WriteCountGet,
+    .errorGet = (DRV_USART_PLIB_ERROR_GET)SERCOM1_USART_ErrorGet,
+    .serialSetup = (DRV_USART_PLIB_SERIAL_SETUP)SERCOM1_USART_SerialSetup
+};
+
+static const uint32_t drvUsart0remapDataWidth[] = { 0x5, 0x6, 0x7, 0x0, 0x1 };
+static const uint32_t drvUsart0remapParity[] = { 0x2, 0x0, 0x80000, 0xFFFFFFFFU, 0xFFFFFFFFU, 0xFFFFFFFFU };
+static const uint32_t drvUsart0remapStopBits[] = { 0x0, 0xFFFFFFFFU, 0x40 };
+static const uint32_t drvUsart0remapError[] = { 0x4, 0x0, 0x2 };
+
+static const DRV_USART_INIT drvUsart0InitData =
+{
+    .usartPlib = &drvUsart0PlibAPI,
+
+    /* USART Number of clients */
+    .numClients = DRV_USART_CLIENTS_NUMBER_IDX0,
+
+    /* USART Client Objects Pool */
+    .clientObjPool = (uintptr_t)&drvUSART0ClientObjPool[0],
+
+
+    .remapDataWidth = drvUsart0remapDataWidth,
+
+    .remapParity = drvUsart0remapParity,
+
+    .remapStopBits = drvUsart0remapStopBits,
+
+    .remapError = drvUsart0remapError,
+
+    .dataWidth = DRV_USART_DATA_8_BIT,
+};
+
+// </editor-fold>
 
 
 
@@ -269,6 +411,12 @@ void SYS_Initialize ( void* data )
     /* Following MISRA-C rules deviated in this block  */
     /* MISRA C-2012 Rule 11.3 - Deviation record ID - H3_MISRAC_2012_R_11_3_DR_1 */
     /* MISRA C-2012 Rule 11.8 - Deviation record ID - H3_MISRAC_2012_R_11_8_DR_1 */
+
+    sysObj.drvUsart2 = DRV_USART_Initialize(DRV_USART_INDEX_2, (SYS_MODULE_INIT *)&drvUsart2InitData);
+
+    sysObj.drvUsart1 = DRV_USART_Initialize(DRV_USART_INDEX_1, (SYS_MODULE_INIT *)&drvUsart1InitData);
+
+    sysObj.drvUsart0 = DRV_USART_Initialize(DRV_USART_INDEX_0, (SYS_MODULE_INIT *)&drvUsart0InitData);
 
 
     sysObj.sysCommand = (uint32_t) SYS_CMD_Initialize((SYS_MODULE_INIT*)&sysCmdInit);
