@@ -10216,7 +10216,7 @@
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="core" name="!@#harmonyUserData"/>
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;UserData&gt;
   &lt;UserData dnOrder=&quot;0&quot;&gt;
-    &lt;GraphSettings canvasHeight=&quot;463&quot; canvasWidth=&quot;1019&quot; dnOrder=&quot;0&quot;/&gt;
+    &lt;GraphSettings canvasHeight=&quot;539&quot; canvasWidth=&quot;895&quot; dnOrder=&quot;0&quot;/&gt;
     &lt;PowerProfiles dnOrder=&quot;1&quot;&gt;
       &lt;Profile dnOrder=&quot;0&quot; id=&quot;profile0&quot; name=&quot;Main&quot;/&gt;
     &lt;/PowerProfiles&gt;
@@ -10227,11 +10227,11 @@
         &lt;ElementPosition dnOrder=&quot;2&quot; id=&quot;cmsis&quot; x=&quot;660&quot; y=&quot;20&quot;/&gt;
         &lt;ElementPosition dnOrder=&quot;3&quot; id=&quot;core&quot; x=&quot;560&quot; y=&quot;20&quot;/&gt;
         &lt;ElementPosition dnOrder=&quot;4&quot; id=&quot;dfp&quot; x=&quot;340&quot; y=&quot;20&quot;/&gt;
-        &lt;ElementPosition dnOrder=&quot;5&quot; id=&quot;drv_usart&quot; x=&quot;182&quot; y=&quot;191&quot;/&gt;
+        &lt;ElementPosition dnOrder=&quot;5&quot; id=&quot;drv_usart&quot; x=&quot;182&quot; y=&quot;193&quot;/&gt;
         &lt;ElementPosition dnOrder=&quot;6&quot; id=&quot;drv_usbfs_v1&quot; x=&quot;359&quot; y=&quot;185&quot;/&gt;
         &lt;ElementPosition dnOrder=&quot;7&quot; id=&quot;evsys&quot; x=&quot;180&quot; y=&quot;20&quot;/&gt;
         &lt;ElementPosition dnOrder=&quot;8&quot; id=&quot;nvmctrl&quot; x=&quot;20&quot; y=&quot;20&quot;/&gt;
-        &lt;ElementPosition dnOrder=&quot;9&quot; id=&quot;sercom1&quot; x=&quot;0&quot; y=&quot;255&quot;/&gt;
+        &lt;ElementPosition dnOrder=&quot;9&quot; id=&quot;sercom1&quot; x=&quot;0&quot; y=&quot;257&quot;/&gt;
         &lt;ElementPosition dnOrder=&quot;10&quot; id=&quot;sercom4&quot; x=&quot;29&quot; y=&quot;383&quot;/&gt;
         &lt;ElementPosition dnOrder=&quot;11&quot; id=&quot;sercom5&quot; x=&quot;28&quot; y=&quot;319&quot;/&gt;
         &lt;ElementPosition dnOrder=&quot;12&quot; id=&quot;sys_command&quot; x=&quot;721&quot; y=&quot;381&quot;/&gt;
@@ -20886,7 +20886,62 @@
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="drv_usart" name="DRV_USART_COMMON_MODE"/>
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;drv_usart&gt;
   &lt;drv_usart dnOrder=&quot;0&quot; id=&quot;DRV_USART_COMMON_MODE&quot;&gt;
-    &lt;Values dnOrder=&quot;0&quot;/&gt;
+    &lt;Values dnOrder=&quot;0&quot;&gt;
+      &lt;Dynamic dnOrder=&quot;0&quot; id=&quot;drv_usart&quot; value=&quot;Synchronous&quot;/&gt;
+      &lt;User dnOrder=&quot;1&quot; value=&quot;Asynchronous&quot;/&gt;
+    &lt;/Values&gt;
+  &lt;/drv_usart&gt;
+&lt;/drv_usart&gt;
+</value>
+      </entry>
+      <entry>
+         <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="drv_usart" name="USART_ASYNC_LOCAL"/>
+         <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;drv_usart&gt;
+  &lt;drv_usart dnOrder=&quot;0&quot; id=&quot;USART_ASYNC_LOCAL&quot;&gt;
+    &lt;Attributes dnOrder=&quot;0&quot;&gt;
+      &lt;Boolean dnOrder=&quot;0&quot; id=&quot;enabled&quot;&gt;
+        &lt;Value dnOrder=&quot;0&quot;&gt;true&lt;/Value&gt;
+      &lt;/Boolean&gt;
+    &lt;/Attributes&gt;
+  &lt;/drv_usart&gt;
+&lt;/drv_usart&gt;
+</value>
+      </entry>
+      <entry>
+         <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="drv_usart" name="USART_ASYNC_SOURCE"/>
+         <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;drv_usart&gt;
+  &lt;drv_usart dnOrder=&quot;0&quot; id=&quot;USART_ASYNC_SOURCE&quot;&gt;
+    &lt;Attributes dnOrder=&quot;0&quot;&gt;
+      &lt;Boolean dnOrder=&quot;0&quot; id=&quot;enabled&quot;&gt;
+        &lt;Value dnOrder=&quot;0&quot;&gt;true&lt;/Value&gt;
+      &lt;/Boolean&gt;
+    &lt;/Attributes&gt;
+  &lt;/drv_usart&gt;
+&lt;/drv_usart&gt;
+</value>
+      </entry>
+      <entry>
+         <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="drv_usart" name="USART_SYNC_LOCAL"/>
+         <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;drv_usart&gt;
+  &lt;drv_usart dnOrder=&quot;0&quot; id=&quot;USART_SYNC_LOCAL&quot;&gt;
+    &lt;Attributes dnOrder=&quot;0&quot;&gt;
+      &lt;Boolean dnOrder=&quot;0&quot; id=&quot;enabled&quot;&gt;
+        &lt;Value dnOrder=&quot;0&quot;&gt;false&lt;/Value&gt;
+      &lt;/Boolean&gt;
+    &lt;/Attributes&gt;
+  &lt;/drv_usart&gt;
+&lt;/drv_usart&gt;
+</value>
+      </entry>
+      <entry>
+         <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="drv_usart" name="USART_SYNC_SOURCE"/>
+         <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;drv_usart&gt;
+  &lt;drv_usart dnOrder=&quot;0&quot; id=&quot;USART_SYNC_SOURCE&quot;&gt;
+    &lt;Attributes dnOrder=&quot;0&quot;&gt;
+      &lt;Boolean dnOrder=&quot;0&quot; id=&quot;enabled&quot;&gt;
+        &lt;Value dnOrder=&quot;0&quot;&gt;false&lt;/Value&gt;
+      &lt;/Boolean&gt;
+    &lt;/Attributes&gt;
   &lt;/drv_usart&gt;
 &lt;/drv_usart&gt;
 </value>
@@ -23868,7 +23923,14 @@
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="sercom4" name="USART_CTRLC_GTIME"/>
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom4&gt;
   &lt;sercom4 dnOrder=&quot;0&quot; id=&quot;USART_CTRLC_GTIME&quot;&gt;
-    &lt;Values dnOrder=&quot;0&quot;/&gt;
+    &lt;Attributes dnOrder=&quot;0&quot;&gt;
+      &lt;Boolean dnOrder=&quot;0&quot; id=&quot;visible&quot;&gt;
+        &lt;Value dnOrder=&quot;0&quot;&gt;true&lt;/Value&gt;
+      &lt;/Boolean&gt;
+    &lt;/Attributes&gt;
+    &lt;Values dnOrder=&quot;1&quot;&gt;
+      &lt;User dnOrder=&quot;0&quot; value=&quot;1&quot;/&gt;
+    &lt;/Values&gt;
   &lt;/sercom4&gt;
 &lt;/sercom4&gt;
 </value>
@@ -26745,7 +26807,7 @@
       </entry>
       <entry>
          <file>..\src\config\default\configuration.h</file>
-         <hash>93eb9383052c46be37ef0806d945524b2c6c77ba4a9618ba4dda6fde683fe040</hash>
+         <hash>2329a5dc04e26787352a5b3558251e4f4385367bdceab31faa301225f40fad3b</hash>
       </entry>
       <entry>
          <file>..\src\config\default\definitions.h</file>
@@ -26777,15 +26839,15 @@
       </entry>
       <entry>
          <file>..\src\config\default\driver\usart\drv_usart_definitions.h</file>
-         <hash>214eb352dd2799b2f485b88befc882e793dd00ba4554568cf9b5935d71a42eec</hash>
+         <hash>2303ed0c3d118933e7bbe5d42e79fe4972422220bbace1e59056c4b62130dd2c</hash>
       </entry>
       <entry>
          <file>..\src\config\default\driver\usart\src\drv_usart.c</file>
-         <hash>a305c6149f63590ebeaa4a805c26e2882cacd1224a3ea8bb35a1d1203e4fa019</hash>
+         <hash>1c3b8526b7089ea9d91e89c36a309e5cbce5eccfa5e9fc63d104fe6631625be0</hash>
       </entry>
       <entry>
          <file>..\src\config\default\driver\usart\src\drv_usart_local.h</file>
-         <hash>7fe9089e87e888d8193a44547cae86afc6f2dce6eb0225f1b6a24b882d593ac4</hash>
+         <hash>67fc75739e4210784198a555a051c1152209250bf0ead10d7c66d56652055fd7</hash>
       </entry>
       <entry>
          <file>..\src\config\default\driver\usb\drv_usb.h</file>
@@ -26825,7 +26887,7 @@
       </entry>
       <entry>
          <file>..\src\config\default\initialization.c</file>
-         <hash>355519b7b6ec0fe8b5a142a1413056ac356c97c4877adb3c4e53fd090756ed40</hash>
+         <hash>b130deb0552c559f68ee454c2ef758927cf7a6852b46144824d930a77b6d4b34</hash>
       </entry>
       <entry>
          <file>..\src\config\default\interrupts.c</file>
@@ -26913,7 +26975,7 @@
       </entry>
       <entry>
          <file>..\src\config\default\peripheral\sercom\usart\plib_sercom4_usart.c</file>
-         <hash>810b78f3a39e89e93c837ca9c9a9526ba717ee3081178e83b791bdd39c972e37</hash>
+         <hash>a70cca0a12288ef7a88b52013f8aed7a80b008ddb2db04c9ecd7a1b969a44b4c</hash>
       </entry>
       <entry>
          <file>..\src\config\default\peripheral\sercom\usart\plib_sercom4_usart.h</file>

@@ -212,6 +212,13 @@ struct DRV_USART_INIT_T
 
     const uint32_t*                         remapError;
 
+    /* Size of transmit and receive buffer pool */
+    uint32_t                                bufferObjPoolSize;
+
+    /* Pointer to the transmit and receive buffer pool */
+    uintptr_t                               bufferObjPool;
+
+    const DRV_USART_INTERRUPT_SOURCES*      interruptSources;
 
     DRV_USART_DATA_BIT                      dataWidth;
 };

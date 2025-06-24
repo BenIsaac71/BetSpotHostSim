@@ -88,6 +88,8 @@
 
 static DRV_USART_CLIENT_OBJ drvUSART2ClientObjPool[DRV_USART_CLIENTS_NUMBER_IDX2];
 
+/* USART transmit/receive transfer objects pool */
+static DRV_USART_BUFFER_OBJ drvUSART2BufferObjPool[DRV_USART_QUEUE_SIZE_IDX2];
 
 static const DRV_USART_PLIB_INTERFACE drvUsart2PlibAPI = {
     .readCallbackRegister = (DRV_USART_PLIB_READ_CALLBACK_REG)SERCOM4_USART_ReadCallbackRegister,
@@ -108,6 +110,18 @@ static const uint32_t drvUsart2remapParity[] = { 0x2, 0x0, 0x80000, 0xFFFFFFFFU,
 static const uint32_t drvUsart2remapStopBits[] = { 0x0, 0xFFFFFFFFU, 0x40 };
 static const uint32_t drvUsart2remapError[] = { 0x4, 0x0, 0x2 };
 
+static const DRV_USART_INTERRUPT_SOURCES drvUSART2InterruptSources =
+{
+    /* Peripheral has more than one interrupt vector */
+    .isSingleIntSrc                        = false,
+
+    /* Peripheral interrupt lines */
+   .intSources.multi.usartTxCompleteInt   = (int32_t)SERCOM4_1_IRQn,
+   .intSources.multi.usartTxReadyInt      = (int32_t)SERCOM4_0_IRQn,
+   .intSources.multi.usartRxCompleteInt   = (int32_t)SERCOM4_2_IRQn,
+   .intSources.multi.usartErrorInt        = (int32_t)SERCOM4_OTHER_IRQn,        
+};
+
 static const DRV_USART_INIT drvUsart2InitData =
 {
     .usartPlib = &drvUsart2PlibAPI,
@@ -118,6 +132,13 @@ static const DRV_USART_INIT drvUsart2InitData =
     /* USART Client Objects Pool */
     .clientObjPool = (uintptr_t)&drvUSART2ClientObjPool[0],
 
+    /* Combined size of transmit and receive buffer objects */
+    .bufferObjPoolSize = DRV_USART_QUEUE_SIZE_IDX2,
+
+    /* USART transmit and receive buffer buffer objects pool */
+    .bufferObjPool = (uintptr_t)&drvUSART2BufferObjPool[0],
+
+    .interruptSources = &drvUSART2InterruptSources,
 
     .remapDataWidth = drvUsart2remapDataWidth,
 
@@ -135,6 +156,8 @@ static const DRV_USART_INIT drvUsart2InitData =
 
 static DRV_USART_CLIENT_OBJ drvUSART1ClientObjPool[DRV_USART_CLIENTS_NUMBER_IDX1];
 
+/* USART transmit/receive transfer objects pool */
+static DRV_USART_BUFFER_OBJ drvUSART1BufferObjPool[DRV_USART_QUEUE_SIZE_IDX1];
 
 static const DRV_USART_PLIB_INTERFACE drvUsart1PlibAPI = {
     .readCallbackRegister = (DRV_USART_PLIB_READ_CALLBACK_REG)SERCOM5_USART_ReadCallbackRegister,
@@ -155,6 +178,18 @@ static const uint32_t drvUsart1remapParity[] = { 0x2, 0x0, 0x80000, 0xFFFFFFFFU,
 static const uint32_t drvUsart1remapStopBits[] = { 0x0, 0xFFFFFFFFU, 0x40 };
 static const uint32_t drvUsart1remapError[] = { 0x4, 0x0, 0x2 };
 
+static const DRV_USART_INTERRUPT_SOURCES drvUSART1InterruptSources =
+{
+    /* Peripheral has more than one interrupt vector */
+    .isSingleIntSrc                        = false,
+
+    /* Peripheral interrupt lines */
+   .intSources.multi.usartTxCompleteInt   = (int32_t)SERCOM5_1_IRQn,
+   .intSources.multi.usartTxReadyInt      = (int32_t)SERCOM5_0_IRQn,
+   .intSources.multi.usartRxCompleteInt   = (int32_t)SERCOM5_2_IRQn,
+   .intSources.multi.usartErrorInt        = (int32_t)SERCOM5_OTHER_IRQn,        
+};
+
 static const DRV_USART_INIT drvUsart1InitData =
 {
     .usartPlib = &drvUsart1PlibAPI,
@@ -165,6 +200,13 @@ static const DRV_USART_INIT drvUsart1InitData =
     /* USART Client Objects Pool */
     .clientObjPool = (uintptr_t)&drvUSART1ClientObjPool[0],
 
+    /* Combined size of transmit and receive buffer objects */
+    .bufferObjPoolSize = DRV_USART_QUEUE_SIZE_IDX1,
+
+    /* USART transmit and receive buffer buffer objects pool */
+    .bufferObjPool = (uintptr_t)&drvUSART1BufferObjPool[0],
+
+    .interruptSources = &drvUSART1InterruptSources,
 
     .remapDataWidth = drvUsart1remapDataWidth,
 
@@ -182,6 +224,8 @@ static const DRV_USART_INIT drvUsart1InitData =
 
 static DRV_USART_CLIENT_OBJ drvUSART0ClientObjPool[DRV_USART_CLIENTS_NUMBER_IDX0];
 
+/* USART transmit/receive transfer objects pool */
+static DRV_USART_BUFFER_OBJ drvUSART0BufferObjPool[DRV_USART_QUEUE_SIZE_IDX0];
 
 static const DRV_USART_PLIB_INTERFACE drvUsart0PlibAPI = {
     .readCallbackRegister = (DRV_USART_PLIB_READ_CALLBACK_REG)SERCOM1_USART_ReadCallbackRegister,
@@ -202,6 +246,18 @@ static const uint32_t drvUsart0remapParity[] = { 0x2, 0x0, 0x80000, 0xFFFFFFFFU,
 static const uint32_t drvUsart0remapStopBits[] = { 0x0, 0xFFFFFFFFU, 0x40 };
 static const uint32_t drvUsart0remapError[] = { 0x4, 0x0, 0x2 };
 
+static const DRV_USART_INTERRUPT_SOURCES drvUSART0InterruptSources =
+{
+    /* Peripheral has more than one interrupt vector */
+    .isSingleIntSrc                        = false,
+
+    /* Peripheral interrupt lines */
+   .intSources.multi.usartTxCompleteInt   = (int32_t)SERCOM1_1_IRQn,
+   .intSources.multi.usartTxReadyInt      = (int32_t)SERCOM1_0_IRQn,
+   .intSources.multi.usartRxCompleteInt   = (int32_t)SERCOM1_2_IRQn,
+   .intSources.multi.usartErrorInt        = (int32_t)SERCOM1_OTHER_IRQn,        
+};
+
 static const DRV_USART_INIT drvUsart0InitData =
 {
     .usartPlib = &drvUsart0PlibAPI,
@@ -212,6 +268,13 @@ static const DRV_USART_INIT drvUsart0InitData =
     /* USART Client Objects Pool */
     .clientObjPool = (uintptr_t)&drvUSART0ClientObjPool[0],
 
+    /* Combined size of transmit and receive buffer objects */
+    .bufferObjPoolSize = DRV_USART_QUEUE_SIZE_IDX0,
+
+    /* USART transmit and receive buffer buffer objects pool */
+    .bufferObjPool = (uintptr_t)&drvUSART0BufferObjPool[0],
+
+    .interruptSources = &drvUSART0InterruptSources,
 
     .remapDataWidth = drvUsart0remapDataWidth,
 
