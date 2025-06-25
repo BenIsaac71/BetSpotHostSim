@@ -48,6 +48,20 @@ typedef enum
     DRV_USART_INDEX_MAX
 } DRV_USART_INDEX;
 
+/* DMAC Channel 0 */
+typedef enum
+{
+    USART_DMA_CHANNEL_TX_START,
+    USART_DMA_CHANNEL_MASTER_TX = USART_DMA_CHANNEL_TX_START,
+    USART_DMA_CHANNEL_SLAVE0_TX,
+    USART_DMA_CHANNEL_SLAVE1_TX,
+
+    USART_DMA_CHANNEL_RX_START,
+    USART_DMA_CHANNEL_MASTER_RX = USART_DMA_CHANNEL_RX_START,
+    USART_DMA_CHANNEL_SLAVE0_RX,
+    USART_DMA_CHANNEL_SLAVE1_RX
+} USART_DMAC_CHANNELS;
+
 typedef enum
 {
     BUF_TYPE_TX,
@@ -55,14 +69,13 @@ typedef enum
     BUF_TYPE_MAX
 } BUF_TYPE;
 
-
-#define USART_BUFFER_SIZE 3
+#define USART_BUFFER_SIZE 65
 typedef struct
 {
     DRV_USART_INDEX index;
-    DRV_HANDLE usart_handle;
-    DRV_USART_BUFFER_HANDLE tx_buffer_handle;
-    DRV_USART_BUFFER_HANDLE rx_buffer_handle;
+    sercom_registers_t *sercom_regs;
+    DMAC_CHANNEL dmac_channel_tx;
+    DMAC_CHANNEL dmac_channel_rx;
     uint8_t tx_buffer[USART_BUFFER_SIZE];
     uint8_t rx_buffer[USART_BUFFER_SIZE];
 } MY_USART_OBJ;
@@ -71,29 +84,23 @@ MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
 {
     [DRV_USART_INDEX_MASTER] = {
         .index = DRV_USART_INDEX_MASTER,
-        .usart_handle = DRV_HANDLE_INVALID,
-        .tx_buffer_handle = DRV_USART_BUFFER_HANDLE_INVALID,
-        .rx_buffer_handle = DRV_USART_BUFFER_HANDLE_INVALID,
-        .tx_buffer = {1, 2, 3},
-        .rx_buffer = {0, 0, 0}  
+        .sercom_regs = SERCOM1_REGS,
+        .dmac_channel_rx = USART_DMA_CHANNEL_MASTER_RX,
+        .dmac_channel_tx = USART_DMA_CHANNEL_MASTER_TX,
     },
     [DRV_USART_INDEX_SLAVE0] = {
         .index = DRV_USART_INDEX_SLAVE0,
-        .usart_handle = DRV_HANDLE_INVALID,
-        .tx_buffer_handle = DRV_USART_BUFFER_HANDLE_INVALID,
-        .rx_buffer_handle = DRV_USART_BUFFER_HANDLE_INVALID,
-        .tx_buffer = {4, 5, 6},
-        .rx_buffer = {0, 0, 0}  
+        .sercom_regs = SERCOM5_REGS,
+        .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE0_RX,
+        .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE0_TX,
     },
     [DRV_USART_INDEX_SLAVE1] = {
         .index = DRV_USART_INDEX_SLAVE1,
-        .usart_handle = DRV_HANDLE_INVALID,
-        .tx_buffer_handle = DRV_USART_BUFFER_HANDLE_INVALID,
-        .rx_buffer_handle = DRV_USART_BUFFER_HANDLE_INVALID,
-        .tx_buffer = {7, 8, 9},
-        .rx_buffer = {0, 0, 0}  
+        .sercom_regs = SERCOM4_REGS,
+        .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE0_RX,
+        .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE0_TX,
     }
-    
+
 };
 
 
@@ -134,44 +141,12 @@ APP_DATA appData;
 /* TODO:  Add any necessary local functions.
 */
 
+
 // *****************************************************************************
 // *****************************************************************************
 // Section: Application Initialization and State Machine Functions
 // *****************************************************************************
 // *****************************************************************************
-
-void usart_event_handler(
-    DRV_USART_BUFFER_EVENT event,
-    DRV_USART_BUFFER_HANDLE bufferHandle,
-    uintptr_t context
-)
-{
-    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
-
-    if (event == DRV_USART_BUFFER_EVENT_COMPLETE)
-    {
-        if (bufferHandle == p_usart_obj->rx_buffer_handle)
-        {
-            // RX buffer is filled, process received data
-            printf("RX complete: Index: %d\n", p_usart_obj->index);
-        }
-        else if (bufferHandle == p_usart_obj->tx_buffer_handle)
-        {
-            // TX buffer sent
-            printf("TX complete: Index: %d\n", p_usart_obj->index);
-        }
-        else
-        {
-            // Unknown buffer handle (should not happen)
-        }
-    }
-    else if (event == DRV_USART_BUFFER_EVENT_ERROR)
-    {
-        // Handle error
-        printf("USART Error: Index: %d\n", p_usart_obj->index);
-    }
-}
-
 
 /*******************************************************************************
   Function:
@@ -186,30 +161,68 @@ void APP_Initialize ( void )
     /* Place the App state machine in its initial state. */
     appData.state = APP_STATE_INIT;
 
+
+
     /* TODO: Initialize your application's state machine and other
      * parameters.
      */
+}
 
-    for (int i = 0; i < DRV_USART_INDEX_MAX; i++)
+
+void USART_TX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
+{
+    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)contextHandle;
+
+    //from isr signal app task to process the next transfer
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    uint32_t ulValue = 1 << p_usart_obj->index;
+
+    if (event == DMAC_TRANSFER_EVENT_COMPLETE)
     {
-        DRV_HANDLE drv_handle;
-
-        drv_handle = DRV_USART_Open(i, DRV_IO_INTENT_EXCLUSIVE | DRV_IO_INTENT_READWRITE | DRV_IO_INTENT_NONBLOCKING);
-        if (drv_handle == DRV_HANDLE_INVALID)
-        {
-            // Handle error
-        }
-        else
-        {
-            usart_objs[i].usart_handle = drv_handle;
-            DRV_USART_BufferEventHandlerSet(
-                drv_handle,
-                usart_event_handler,
-                (uintptr_t)&usart_objs[i]
-            );  
-        }
+        // Transfer completed successfully
+        //printf("TX DMA transfer completed for USART index %d\n", p_usart_obj->index);
+    }
+    else if (event == DMAC_TRANSFER_EVENT_ERROR)
+    {
+        ulValue |= (1 << (p_usart_obj->index + DRV_USART_INDEX_MAX)); // Set error bit
+        // Handle transfer error
+        //printf("TX DMA transfer error for USART index %d\n", p_usart_obj->index);
+    }
+    xTaskNotifyFromISR(xAPP_Tasks, ulValue, eSetBits, &xHigherPriorityTaskWoken);
+    if (xHigherPriorityTaskWoken == pdTRUE)
+    {
+        // If a higher priority task was woken, yield to it
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
     }
 }
+
+void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
+{
+    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)contextHandle;
+
+    //from isr signal app task to process the next transfer
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    uint32_t ulValue = 1 << p_usart_obj->index;
+
+    if (event == DMAC_TRANSFER_EVENT_COMPLETE)
+    {
+        // Transfer completed successfully
+        printf("RX DMA transfer completed for USART index %d\n", p_usart_obj->index);
+    }
+    else if (event == DMAC_TRANSFER_EVENT_ERROR)
+    {
+        ulValue |= (1 << (p_usart_obj->index + DRV_USART_INDEX_MAX)); // Set error bit
+        // Handle transfer error
+        //printf("RX DMA transfer error for USART index %d\n", p_usart_obj->index);
+    }
+    xTaskNotifyFromISR(xAPP_Tasks, ulValue, eSetBits, &xHigherPriorityTaskWoken);
+    if (xHigherPriorityTaskWoken == pdTRUE)
+    {
+        // If a higher priority task was woken, yield to it
+        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+    }
+}
+
 
 
 /******************************************************************************
@@ -235,6 +248,16 @@ void APP_Tasks ( void )
         if (appInitialized)
         {
 
+            //for each usart object, initialize the trasnmit buffer to a counter value + index of the // usart object
+            for (int i = 0; i < DRV_USART_INDEX_MAX; i++)
+            {
+                for (int j = 0; j < USART_BUFFER_SIZE; j++)
+                {
+                    //usart_objs[i].tx_buffer[j] = j + i;
+                    usart_objs[i].tx_buffer[j] = 0;
+
+                }
+            }
             appData.state = APP_STATE_SERVICE_TASKS;
         }
         break;
@@ -242,35 +265,54 @@ void APP_Tasks ( void )
 
     case APP_STATE_SERVICE_TASKS:
     {
+
         printf("hi\n");
         LED_RED_Toggle();
+        vTaskDelay(pdMS_TO_TICKS(100));
+
 
         for (int i = 0; i < DRV_USART_INDEX_MAX; i++)
         {
-            MY_USART_OBJ *usart_rx_obj = &usart_objs[i];
-            DRV_USART_ReadBufferAdd(
-                usart_rx_obj->usart_handle,
-                usart_rx_obj->rx_buffer,
-                USART_BUFFER_SIZE,
-                &usart_rx_obj->rx_buffer_handle
-            );
+            MY_USART_OBJ *p_usart_obj = &usart_objs[i];
+
+            // set up dmac transfer conmplete callback
+            DMAC_ChannelCallbackRegister(i + USART_DMA_CHANNEL_RX_START, (DMAC_CHANNEL_CALLBACK)USART_RX_DMA_Callback, (uintptr_t)p_usart_obj);
+            if (DMAC_ChannelTransfer(i + USART_DMA_CHANNEL_RX_START, (uint8_t * )&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, p_usart_obj->rx_buffer,  USART_BUFFER_SIZE))
+            {
+            }
+            else
+            {
+                // Handle error
+                printf("DMA transfer failed for Master RX\n");
+            }
         }
 
         for (int i = 0; i < DRV_USART_INDEX_MAX; i++)
         {
-            MY_USART_OBJ *usart_tx_obj = &usart_objs[i];
+            MY_USART_OBJ *p_usart_obj = &usart_objs[i];
 
-            DRV_USART_WriteBufferAdd(
-                usart_tx_obj->usart_handle,
-                usart_tx_obj->tx_buffer,
-                USART_BUFFER_SIZE,
-                &usart_tx_obj->tx_buffer_handle
-            );
-            vTaskDelay(pdMS_TO_TICKS(5));
+            // set up dmac transfer conmplete callback
+            DMAC_ChannelCallbackRegister(i + USART_DMA_CHANNEL_TX_START, (DMAC_CHANNEL_CALLBACK)USART_TX_DMA_Callback, (uintptr_t)p_usart_obj);
+            if (DMAC_ChannelTransfer(i + USART_DMA_CHANNEL_TX_START, p_usart_obj->tx_buffer, (uint8_t * )&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, USART_BUFFER_SIZE))
+            {
+            }
+            else
+            {
+                // Handle error
+                printf("DMA transfer failed for Master TX\n");
+            }
+            while (DMAC_ChannelIsBusy(i + USART_DMA_CHANNEL_TX_START))
+            {
+                // Wait for the transfer to complete
+            }
+            //wait for task signal from isr
+            uint32_t ulNotificationValue;
+            xTaskNotifyWait(0, 1 << p_usart_obj->index, &ulNotificationValue, pdMS_TO_TICKS(1));
+            //            printf("Task notified for USART index %d with value: %lu\n", i, ulNotificationValue);
         }
-        vTaskDelay(pdMS_TO_TICKS(1000));
         break;
     }
+
     /* TODO: implement your application state machine.*/
 
 
