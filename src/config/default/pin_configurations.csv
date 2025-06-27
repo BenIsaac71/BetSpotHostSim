@@ -17,20 +17,20 @@ Pin Number,Pin ID,Custom Name,Function,Mode, Direction,Latch,Pull Up,Pull Down,D
 18,PA09,,Available,,,,,,NORMAL
 19,PA10,,Available,,,,,,NORMAL
 20,PA11,,Available,,,,,,NORMAL
-23,PB10,SLAVE1_TE,SERCOM4_PAD2,Digital,High Impedance,n/a,No,No,NORMAL
+23,PB10,SLAVE1_TE,GPIO,Digital,Out,Low,,,NORMAL
 24,PB11,SLAVE1_RX,SERCOM4_PAD3,Digital,High Impedance,n/a,No,No,NORMAL
 25,PB12,,Available,,,,,,NORMAL
 26,PB13,,Available,,,,,,NORMAL
-27,PB14,,Available,,,,,,NORMAL
+27,PB14,,Available,,,,,,STRONG
 28,PB15,,Available,,,,,,NORMAL
 29,PA12,,Available,,,,,,NORMAL
 30,PA13,,Available,,,,,,NORMAL
 31,PA14,DIAG_SW0,EIC_EXTINT14,Digital,High Impedance,n/a,No,No,NORMAL
 32,PA15,DIAG_SW1,EIC_EXTINT15,Digital,High Impedance,n/a,No,No,NORMAL
-35,PA16,HOST_TX,SERCOM1_PAD0,Digital,High Impedance,n/a,No,No,NORMAL
+35,PA16,MASTER_TX,SERCOM1_PAD0,Digital,High Impedance,n/a,No,No,NORMAL
 36,PA17,,Available,,,,,,NORMAL
-37,PA18,HOST_TE,SERCOM1_PAD2,Digital,High Impedance,n/a,No,No,NORMAL
-38,PA19,HOST_RX,SERCOM1_PAD3,Digital,High Impedance,n/a,No,No,NORMAL
+37,PA18,MASTER_TE,GPIO,Digital,Out,Low,,,NORMAL
+38,PA19,MASTER_RX,SERCOM1_PAD3,Digital,High Impedance,n/a,No,No,NORMAL
 39,PB16,LED_RED,GPIO,Digital,Out,High,,,NORMAL
 40,PB17,LED_GREEN,GPIO,Digital,Out,High,,,NORMAL
 41,PA20,,Available,,,,,,NORMAL
@@ -46,7 +46,7 @@ Pin Number,Pin ID,Custom Name,Function,Mode, Direction,Latch,Pull Up,Pull Down,D
 58,PA31,,Available,,,,,,NORMAL
 59,PB30,,Available,,,,,,NORMAL
 60,PB31,,Available,,,,,,NORMAL
-61,PB00,SLAVE0_TE,SERCOM5_PAD2,Digital,High Impedance,n/a,No,No,NORMAL
+61,PB00,SLAVE0_TE,GPIO,Digital,Out,Low,,,NORMAL
 62,PB01,SLAVE0_RX,SERCOM5_PAD3,Digital,High Impedance,n/a,No,No,NORMAL
 63,PB02,SLAVE0_TX,SERCOM5_PAD0,Digital,High Impedance,n/a,No,No,NORMAL
 64,PB03,,Available,,,,,,NORMAL

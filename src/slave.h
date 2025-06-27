@@ -5,7 +5,7 @@
     Microchip Technology Inc.
 
   File Name:
-    app.h
+    slave.h
 
   Summary:
     This header file provides prototypes and definitions for the application.
@@ -13,13 +13,13 @@
   Description:
     This header file provides function prototypes and data type definitions for
     the application.  Some of these are required by the system (such as the
-    "APP_Initialize" and "APP_Tasks" prototypes) and some of them are only used
-    internally by the application (such as the "APP_STATES" definition).  Both
+    "SLAVE_Initialize" and "SLAVE_Tasks" prototypes) and some of them are only used
+    internally by the application (such as the "SLAVE_STATES" definition).  Both
     are defined here for convenience.
 *******************************************************************************/
 
-#ifndef _APP_H
-#define _APP_H
+#ifndef _SLAVE_H
+#define _SLAVE_H
 
 // *****************************************************************************
 // *****************************************************************************
@@ -32,6 +32,7 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include "configuration.h"
+
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
@@ -61,89 +62,12 @@ extern "C" {
 typedef enum
 {
     /* Application's state machine's initial state. */
-    APP_STATE_INIT = 0,
-    APP_STATE_SERVICE_TASKS,
+    SLAVE_STATE_INIT=0,
+    SLAVE_STATE_WAITING_FOR_MESSAGE,
+    SLAVE_STATE_TRANSMITTING_RESPONSE,
     /* TODO: Define states used by the application state machine. */
 
-} APP_STATES;
-
-typedef enum
-{
-    USART_DMA_CHANNEL_MASTER_TX = DMAC_CHANNEL_0,
-    USART_DMA_CHANNEL_SLAVE0_TX = DMAC_CHANNEL_1,
-    USART_DMA_CHANNEL_SLAVE1_TX = DMAC_CHANNEL_2,
-
-    USART_DMA_CHANNEL_MASTER_RX = DMAC_CHANNEL_3,
-    USART_DMA_CHANNEL_SLAVE0_RX = DMAC_CHANNEL_4,
-    USART_DMA_CHANNEL_SLAVE1_RX = DMAC_CHANNEL_5,
-} USART_DMAC_CHANNELS;
-
-typedef enum
-{
-    DRV_USART_INDEX_MASTER,
-    DRV_USART_INDEX_SLAVE0,
-    DRV_USART_INDEX_SLAVE1,
-    DRV_USART_INDEX_MAX
-} DRV_USART_INDEX;
-
-#define DRV_USART_SERCOM_REGISTERS_MASTER SERCOM1_REGS
-#define DRV_USART_SERCOM_REGISTERS_SLAVE0 SERCOM5_REGS
-#define DRV_USART_SERCOM_REGISTERS_SLAVE1 SERCOM4_REGS
-
-
-
-#define NUMBER_OF_SLAVES 2
-
-#define USART_SIGNAL_COMPLETE_TX(drv_usart_index) (1<<(drv_usart_index))
-#define USART_SIGNAL_COMPLETE_RX(drv_usart_index) (1<<(drv_usart_index + DRV_USART_INDEX_MAX))
-
-typedef enum
-{
-    USART_SIGNAL_COMPLETE_MASTER_TX = USART_SIGNAL_COMPLETE_TX(DRV_USART_INDEX_MASTER),
-    USART_SIGNAL_COMPLETE_SLAVE0_TX = USART_SIGNAL_COMPLETE_TX(DRV_USART_INDEX_SLAVE0),
-    USART_SIGNAL_COMPLETE_SLAVE1_TX = USART_SIGNAL_COMPLETE_TX(DRV_USART_INDEX_SLAVE1),
-    USART_SIGNAL_COMPLETE_MASTER_RX = USART_SIGNAL_COMPLETE_RX(DRV_USART_INDEX_MASTER),
-    USART_SIGNAL_COMPLETE_SLAVE0_RX = USART_SIGNAL_COMPLETE_RX(DRV_USART_INDEX_SLAVE0),
-    USART_SIGNAL_COMPLETE_SLAVE1_RX = USART_SIGNAL_COMPLETE_RX(DRV_USART_INDEX_SLAVE1),
-    USART_SIGNAL_ERROR_FLAG = (1 << (2 * DRV_USART_INDEX_MAX))
-}USART_NOTIFICATION_VALUE;
-
-
-#define MASTER_ADDRESS  0xF
-#define GLOBAL_ADDRESS  0x0
-#define SLAVE0_ADDRESS  0x1
-#define SLAVE1_ADDRESS  0x2
-
-#define MASTER_DATA "Master\x55"//len must be same for now
-#define SLAVE0_DATA "Slave0\x55"//len must be same for now
-#define SLAVE1_DATA "Slave1\x55"//len must be same for now
-
-#define DATA_BUFFER_SIZE sizeof(MASTER_DATA)
-typedef struct __packed
-{
-    uint8_t to_addr : 4;  //should be no more than 3 slave
-    uint8_t from_addr : 4;
-    uint8_t op;
-    uint8_t data[DATA_BUFFER_SIZE];
-} BS_MESSAGE_BUFFER;
-
-#define USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER))
-
-
-typedef struct
-
-{
-    DRV_USART_INDEX index;
-    uint8_t address:4; // address of this USART, 0xF for master, 0-3 for slaves
-    sercom_registers_t *sercom_regs;
-    USART_DMAC_CHANNELS dmac_channel_tx;
-    USART_DMAC_CHANNELS dmac_channel_rx;
-    BS_MESSAGE_BUFFER tx_buffer;
-    BS_MESSAGE_BUFFER rx_buffer;
-    TaskHandle_t task_handle;
-} MY_USART_OBJ;
-
-
+} SLAVE_STATES;
 
 
 // *****************************************************************************
@@ -162,13 +86,11 @@ typedef struct
 typedef struct
 {
     /* The application's current state */
-    APP_STATES state;
+    SLAVE_STATES state;
 
     /* TODO: Define any additional data used by the application. */
 
-} APP_DATA;
-
-
+} SLAVE_DATA;
 
 // *****************************************************************************
 // *****************************************************************************
@@ -186,7 +108,7 @@ typedef struct
 
 /*******************************************************************************
   Function:
-    void APP_Initialize ( void )
+    void SLAVE_Initialize ( void )
 
   Summary:
      MPLAB Harmony application initialization routine.
@@ -194,7 +116,7 @@ typedef struct
   Description:
     This function initializes the Harmony application.  It places the
     application in its initial state and prepares it to run so that its
-    APP_Tasks function can be called.
+    SLAVE_Tasks function can be called.
 
   Precondition:
     All other system initialization routines should be called before calling
@@ -208,19 +130,19 @@ typedef struct
 
   Example:
     <code>
-    APP_Initialize();
+    SLAVE_Initialize();
     </code>
 
   Remarks:
     This routine must be called from the SYS_Initialize function.
 */
 
-void APP_Initialize ( void );
+void SLAVE_Initialize ( void );
 
 
 /*******************************************************************************
   Function:
-    void APP_Tasks ( void )
+    void SLAVE_Tasks ( void )
 
   Summary:
     MPLAB Harmony Demo application tasks function
@@ -241,24 +163,17 @@ void APP_Initialize ( void );
 
   Example:
     <code>
-    APP_Tasks();
+    SLAVE_Tasks();
     </code>
 
   Remarks:
     This routine must be called from SYS_Tasks() routine.
  */
 
-void APP_Tasks( void );
-void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
-void USART_TX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
-extern MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX];
-void USART_TE_Set(DRV_USART_INDEX index);
 
-// *****************************************************************************
-// *****************************************************************************
-// Section: RTOS "Tasks" Handles
-// *****************************************************************************
-// *****************************************************************************
+/* Declaration of  SLAVE_Tasks task handle */
+extern TaskHandle_t xSlave0TaskHandle;
+extern TaskHandle_t xSlave1TaskHandle;
 
 //DOM-IGNORE-BEGIN
 #ifdef __cplusplus
@@ -266,7 +181,7 @@ void USART_TE_Set(DRV_USART_INDEX index);
 #endif
 //DOM-IGNORE-END
 
-#endif /* _APP_H */
+#endif /* _SLAVE_H */
 
 /*******************************************************************************
  End of File
