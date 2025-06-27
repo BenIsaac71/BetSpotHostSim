@@ -159,7 +159,9 @@ void vSlaveTask(void *pvParameters)
             usart_objs[DRV_USART_INDEX_SLAVE1].task_handle = xAPP_Tasks;
             while (true)
             {
-                vTaskDelay(pdMS_TO_TICKS(100)); // Delay to allow other tasks to initialize
+                //wait a random delay
+                vTaskDelay(pdMS_TO_TICKS(rand() % 256)); // Random delay, some where at start initialize the seed with the serial number
+                LED_GREEN_Toggle();
             }
 
             usart_objs[DRV_USART_INDEX_SLAVE0].task_handle = xSlave0TaskHandle;

@@ -94,8 +94,8 @@ typedef enum
 
 #define NUMBER_OF_SLAVES 2
 
-#define USART_SIGNAL_COMPLETE_TX(drv_usart_index) (1<<(drv_usart_index))
-#define USART_SIGNAL_COMPLETE_RX(drv_usart_index) (1<<(drv_usart_index + DRV_USART_INDEX_MAX))
+#define USART_SIGNAL_COMPLETE_TX(drv_usart_index) (0x01<<(drv_usart_index))
+#define USART_SIGNAL_COMPLETE_RX(drv_usart_index) (0x10<<(drv_usart_index))
 
 typedef enum
 {
@@ -105,7 +105,7 @@ typedef enum
     USART_SIGNAL_COMPLETE_MASTER_RX = USART_SIGNAL_COMPLETE_RX(DRV_USART_INDEX_MASTER),
     USART_SIGNAL_COMPLETE_SLAVE0_RX = USART_SIGNAL_COMPLETE_RX(DRV_USART_INDEX_SLAVE0),
     USART_SIGNAL_COMPLETE_SLAVE1_RX = USART_SIGNAL_COMPLETE_RX(DRV_USART_INDEX_SLAVE1),
-    USART_SIGNAL_ERROR_FLAG = (1 << (2 * DRV_USART_INDEX_MAX))
+    USART_SIGNAL_ERROR_FLAG = 0x100
 }USART_NOTIFICATION_VALUE;
 
 
@@ -118,13 +118,14 @@ typedef enum
 #define SLAVE0_DATA "Slave0\x55"//len must be same for now
 #define SLAVE1_DATA "Slave1\x55"//len must be same for now
 
-#define DATA_BUFFER_SIZE sizeof(MASTER_DATA)
+#define DATA_BUFFER_SIZE 20*3+3
 typedef struct __packed
 {
     uint8_t to_addr : 4;  //should be no more than 3 slave
     uint8_t from_addr : 4;
     uint8_t op;
     uint8_t data[DATA_BUFFER_SIZE];
+    uint8_t csum;
 } BS_MESSAGE_BUFFER;
 
 #define USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER))

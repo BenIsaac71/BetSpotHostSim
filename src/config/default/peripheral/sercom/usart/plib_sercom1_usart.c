@@ -121,7 +121,7 @@ void SERCOM1_USART_Initialize( void )
     }
 
     /* Configures RS485 Guard Time */
-    SERCOM1_REGS->USART_INT.SERCOM_CTRLC = SERCOM_USART_INT_CTRLC_GTIME(7UL);
+    SERCOM1_REGS->USART_INT.SERCOM_CTRLC = SERCOM_USART_INT_CTRLC_GTIME(0UL);
 
     /* Enable the UART after the configurations */
     SERCOM1_REGS->USART_INT.SERCOM_CTRLA |= SERCOM_USART_INT_CTRLA_ENABLE_Msk;
@@ -581,21 +581,11 @@ void static __attribute__((used)) SERCOM1_USART_ISR_TX_Handler( void )
     }
 }
 
-#include "peripheral/port/plib_port.h"
 void __attribute__((used)) SERCOM1_USART_InterruptHandler( void )
 {
     bool testCondition;
     if(SERCOM1_REGS->USART_INT.SERCOM_INTENSET != 0U)
     {
-        /* Checks for TXC flag */
-        testCondition = ((SERCOM1_REGS->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == SERCOM_USART_INT_INTFLAG_TXC_Msk);
-        testCondition = ((SERCOM1_REGS->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTENSET_TXC_Msk) == SERCOM_USART_INT_INTENSET_TXC_Msk) && testCondition;
-        if(testCondition)
-        {
-            MASTER_TE_Clear();
-            SERCOM1_REGS->USART_INT.SERCOM_INTENCLR = SERCOM_USART_INT_INTENCLR_TXC_Msk;
-        }
-
         /* Checks for error flag */
         testCondition = ((SERCOM1_REGS->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_ERROR_Msk) == SERCOM_USART_INT_INTFLAG_ERROR_Msk);
         testCondition = ((SERCOM1_REGS->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTENSET_ERROR_Msk) == SERCOM_USART_INT_INTENSET_ERROR_Msk) && testCondition;
