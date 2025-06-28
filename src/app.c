@@ -114,18 +114,16 @@ void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
         printf("error DMA RX");
         return;
     }
-    //if message is not for us, we don't signal the task and restart the RX DMA transfer
-    if (p_usart_obj->rx_buffer.to_addr != p_usart_obj->address && p_usart_obj->rx_buffer.to_addr != GLOBAL_ADDRESS)
-    {
-        printf("r%d", p_usart_obj->index);
-//        return;
-    }
 
-    xTaskNotifyFromISR(p_usart_obj->task_handle, ulValue, eSetBits, &xHigherPriorityTaskWoken);
-    if (xHigherPriorityTaskWoken == pdTRUE)
+    //signal task if its for our addres or global address
+    if ((p_usart_obj->rx_buffer.to_addr == p_usart_obj->address) || (p_usart_obj->rx_buffer.to_addr == GLOBAL_ADDRESS))
     {
-        // If a higher priority task was woken, yield to it
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        xTaskNotifyFromISR(p_usart_obj->task_handle, ulValue, eSetBits, &xHigherPriorityTaskWoken);
+        if (xHigherPriorityTaskWoken == pdTRUE)
+        {
+            // If a higher priority task was woken, yield to it
+            portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+        }
     }
 }
 
@@ -287,23 +285,20 @@ void APP_Tasks ( void )
 
         while (true)
         {
-            for (int i = 0; i < DRV_USART_INDEX_MAX; i++)
-            {
-                MY_USART_OBJ *p_usart_obj = &usart_objs[i];
-                transmit_message(p_usart_obj, MASTER_ADDRESS - 1); //transmit to no one
-
-                if (xTaskNotifyWait(0,  0xFFFFFFFF, &ulNotificationValue, 5))
-                {
-                    for (int j = 0; j < DRV_USART_INDEX_MAX; j++)
-                    {
-                        if (ulNotificationValue & USART_SIGNAL_COMPLETE_RX(j))
-                        {
-                            printf("%d\n", j);
-                        }
-                    }
-                }
-            }
-            portYIELD();
+                transmit_message(p_usart_obj, SLAVE0_ADDRESS);
+                vTaskDelay(1000);
+                transmit_message(p_usart_obj, SLAVE1_ADDRESS);
+                vTaskDelay(1000);
+                // if (xTaskNotifyWait(0,  0xFFFFFFFF, &ulNotificationValue, 5))
+                // {
+                //     for (int j = 0; j < DRV_USART_INDEX_MAX; j++)
+                //     {
+                //         if (ulNotificationValue & USART_SIGNAL_COMPLETE_RX(j))
+                //         {
+                //             printf("%d\n", j);
+                //         }
+                //     }
+                // }
         }
 
 

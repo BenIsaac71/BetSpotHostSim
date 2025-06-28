@@ -145,6 +145,7 @@ void vSlaveTask(void *pvParameters)
     SLAVE_DATA *slaveData = &ctx->stateData;
     uint32_t ulNotificationValue;
 
+    p_usart_obj->task_handle = xTaskGetCurrentTaskHandle();
 
     while (true)
     {
@@ -155,12 +156,16 @@ void vSlaveTask(void *pvParameters)
         case SLAVE_STATE_INIT:
         {
             //test code to run dma testing out of app task
-            usart_objs[DRV_USART_INDEX_SLAVE0].task_handle = xAPP_Tasks;
-            usart_objs[DRV_USART_INDEX_SLAVE1].task_handle = xAPP_Tasks;
             while (true)
             {
-                //wait a random delay
-                vTaskDelay(pdMS_TO_TICKS(rand() % 256)); // Random delay, some where at start initialize the seed with the serial number
+                if (xTaskNotifyWait(0,  USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 5))
+                {
+                    if(ulNotificationValue & USART_SIGNAL_COMPLETE_RX(p_usart_obj->index))
+                    {
+                        printf("S%d<-%s\n", p_usart_obj->index, p_usart_obj->rx_buffer.data);
+                    }
+                }
+
                 LED_GREEN_Toggle();
             }
 

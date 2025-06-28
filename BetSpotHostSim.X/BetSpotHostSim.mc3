@@ -23661,7 +23661,7 @@
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom1&gt;
   &lt;sercom1 dnOrder=&quot;0&quot; id=&quot;USART_TXPO&quot;&gt;
     &lt;Values dnOrder=&quot;0&quot;&gt;
-      &lt;User dnOrder=&quot;0&quot; value=&quot;2&quot;/&gt;
+      &lt;User dnOrder=&quot;0&quot; value=&quot;0&quot;/&gt;
     &lt;/Values&gt;
   &lt;/sercom1&gt;
 &lt;/sercom1&gt;
@@ -25116,7 +25116,7 @@
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom4&gt;
   &lt;sercom4 dnOrder=&quot;0&quot; id=&quot;USART_TXPO&quot;&gt;
     &lt;Values dnOrder=&quot;0&quot;&gt;
-      &lt;User dnOrder=&quot;0&quot; value=&quot;2&quot;/&gt;
+      &lt;User dnOrder=&quot;0&quot; value=&quot;0&quot;/&gt;
     &lt;/Values&gt;
   &lt;/sercom4&gt;
 &lt;/sercom4&gt;
@@ -26571,7 +26571,7 @@
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom5&gt;
   &lt;sercom5 dnOrder=&quot;0&quot; id=&quot;USART_TXPO&quot;&gt;
     &lt;Values dnOrder=&quot;0&quot;&gt;
-      &lt;User dnOrder=&quot;0&quot; value=&quot;2&quot;/&gt;
+      &lt;User dnOrder=&quot;0&quot; value=&quot;0&quot;/&gt;
     &lt;/Values&gt;
   &lt;/sercom5&gt;
 &lt;/sercom5&gt;
@@ -27615,7 +27615,7 @@
       </entry>
       <entry>
          <file>..\src\config\default\definitions.h</file>
-         <hash>8762836884cb6e32adca4f3a4b3ed0a83c5f86eea2fcb36648bfe2829dff5d65</hash>
+         <hash>4f3738af6b9c18c53fefddb868d798a2715d13d742c862d7e19eef86b1452ea4</hash>
       </entry>
       <entry>
          <file>..\src\config\default\device.h</file>
@@ -27763,7 +27763,7 @@
       </entry>
       <entry>
          <file>..\src\config\default\peripheral\sercom\usart\plib_sercom1_usart.c</file>
-         <hash>71f01df1d0479970a9c85e873de3fa6460b0dafb2cd8b3630d1a3a4f82f271cc</hash>
+         <hash>5d6c60c5b774efb5618b3875771d3d633df5be3565471df244b607e741628298</hash>
       </entry>
       <entry>
          <file>..\src\config\default\peripheral\sercom\usart\plib_sercom1_usart.h</file>
@@ -27771,7 +27771,7 @@
       </entry>
       <entry>
          <file>..\src\config\default\peripheral\sercom\usart\plib_sercom4_usart.c</file>
-         <hash>810b78f3a39e89e93c837ca9c9a9526ba717ee3081178e83b791bdd39c972e37</hash>
+         <hash>6886b3cbdb8c16c1e5a24deddb733a149b6db3bec74c0119aa08287ef299988a</hash>
       </entry>
       <entry>
          <file>..\src\config\default\peripheral\sercom\usart\plib_sercom4_usart.h</file>
@@ -27779,7 +27779,7 @@
       </entry>
       <entry>
          <file>..\src\config\default\peripheral\sercom\usart\plib_sercom5_usart.c</file>
-         <hash>4ba6bf7b247e1da9f13c3098bf5c5ad9f43a85928a8bc1b5f5fb474f36abbd6d</hash>
+         <hash>a1e379d389eec04eaef16e1cc54cebcdfdf8b43762ee2a96577cd17a644cf65f</hash>
       </entry>
       <entry>
          <file>..\src\config\default\peripheral\sercom\usart\plib_sercom5_usart.h</file>
