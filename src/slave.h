@@ -27,11 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include "configuration.h"
+#include "definitions.h"
 
 
 // DOM-IGNORE-BEGIN

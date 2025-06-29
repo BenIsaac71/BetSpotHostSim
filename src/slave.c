@@ -26,12 +26,7 @@
 // Section: Included Files
 // *****************************************************************************
 // *****************************************************************************
-
-#include "definitions.h"
-#include "sys_tasks.h"
-#include "app.h"
 #include "slave.h"
-#include "stdio.h"
 
 // *****************************************************************************
 // *****************************************************************************
@@ -189,7 +184,6 @@ void vSlaveTask(void *pvParameters)
                 printf("S%d<-timout\n", p_usart_obj->index);
             }
 
-            LED_RED_Clear();
 
             BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
 

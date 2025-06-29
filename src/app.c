@@ -1,8 +1,6 @@
-#include "definitions.h"
-#include "sys_tasks.h"
 #include "app.h"
+#include "sys_tasks.h"
 #include "slave.h"
-#include "stdio.h"
 
 // *****************************************************************************
 MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
@@ -187,7 +185,6 @@ void transmit_message(MY_USART_OBJ *p_usart_obj, int to_addr)
     printf(" T%d", p_usart_obj->index);
 
     USART_TE_Set(p_usart_obj->index);
-    LED_RED_Clear();
 
     //turn on the usart txc interrupt
     p_usart_obj->tx_buffer.to_addr = to_addr; // Set the destination address for the message
@@ -204,7 +201,6 @@ void transmit_message(MY_USART_OBJ *p_usart_obj, int to_addr)
     while ((p_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == 0);
 
     USART_TE_Clear(p_usart_obj->index); // Clear the TE line after transmission
-    LED_RED_Set();
 
     printf("%dt\n", p_usart_obj->index);
 
@@ -271,7 +267,6 @@ void APP_Tasks ( void )
     USART_TE_Set(p_usart_obj->index);//Driver needs a to warm up on startup
     vTaskDelay(pdMS_TO_TICKS(10)); // Delay to allow other tasks to initialize
 
-
     /* Check the application's current state. */
     switch ( appData.state )
     {
@@ -279,16 +274,24 @@ void APP_Tasks ( void )
     case APP_STATE_INIT:
         usart_objs[DRV_USART_INDEX_MASTER].task_handle = xAPP_Tasks;
         //test code to run dma testing out of app task
-        prepare_to_receive_message(&usart_objs[DRV_USART_INDEX_MASTER]);
-        prepare_to_receive_message(&usart_objs[DRV_USART_INDEX_SLAVE0]);
-        prepare_to_receive_message(&usart_objs[DRV_USART_INDEX_SLAVE1]);
-
+        // prepare_to_receive_message(&usart_oebjs[DRV_USART_INDEX_MASTER]);
+        // //prepare_to_receive_message(&usart_objs[DRV_USART_INDEX_SLAVE0]);
+        // prepare_to_receive_message(&usart_objs[DRV_USART_INDEX_SLAVE1]);
+        
+        uint8_t buffer[USART_BUFFER_SIZE] = {0};
         while (true)
         {
-                transmit_message(p_usart_obj, SLAVE0_ADDRESS);
-                vTaskDelay(1000);
-                transmit_message(p_usart_obj, SLAVE1_ADDRESS);
-                vTaskDelay(1000);
+                SERCOM5_USART_Read(buffer,5);
+
+//                transmit_message(p_usart_obj, SLAVE0_ADDRESS);
+                vTaskDelay(500);
+                printf("\n");
+                vTaskDelay(500);
+                // transmit_message(p_usart_obj, SLAVE1_ADDRESS);
+                // vTaskDelay(1000);
+
+
+
                 // if (xTaskNotifyWait(0,  0xFFFFFFFF, &ulNotificationValue, 5))
                 // {
                 //     for (int j = 0; j < DRV_USART_INDEX_MAX; j++)

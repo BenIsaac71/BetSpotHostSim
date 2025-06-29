@@ -27,11 +27,7 @@
 // *****************************************************************************
 // *****************************************************************************
 
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include "configuration.h"
+#include "definitions.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
@@ -106,7 +102,7 @@ typedef enum
     USART_SIGNAL_COMPLETE_SLAVE0_RX = USART_SIGNAL_COMPLETE_RX(DRV_USART_INDEX_SLAVE0),
     USART_SIGNAL_COMPLETE_SLAVE1_RX = USART_SIGNAL_COMPLETE_RX(DRV_USART_INDEX_SLAVE1),
     USART_SIGNAL_ERROR_FLAG = 0x100
-}USART_NOTIFICATION_VALUE;
+} USART_NOTIFICATION_VALUE;
 
 
 #define MASTER_ADDRESS  0xF
@@ -118,30 +114,83 @@ typedef enum
 #define SLAVE0_DATA "Slave0\x55"//len must be same for now
 #define SLAVE1_DATA "Slave1\x55"//len must be same for now
 
-#define DATA_BUFFER_SIZE 20*3+3
+#define DATA_BUFFER_SIZE 20*3 // 20 pixels * 3 bytes per pixel 
+
+#define MY_USART_PACKET_START_BYTE 0X7E
+
+//processed by usart state machine
+typedef struct
+{
+    uint8_t start_byte;      //will always be MY_USART_PACKET_START_BYTE
+    uint16_t data_length;    //will never be MY_USART_PACKET_START_BYTE, length of data in bytes
+}BS_MESSAGE_HEADER;
+
+
 typedef struct __packed
 {
-    uint8_t to_addr : 4;  //should be no more than 3 slave
-    uint8_t from_addr : 4;
-    uint8_t op;
-    uint8_t data[DATA_BUFFER_SIZE];
-    uint8_t csum;
+    uint8_t to_addr : 4;    //will never be MY_USART_PACKET_START_BYTE
+    uint8_t from_addr : 4;  //will never be MY_USART_PACKET_START_BYTE
+    uint8_t op;             //will never be MY_USART_PACKET_START_BYTE
+    uint8_t data[DATA_BUFFER_SIZE * 2]; //2 times for byte stuffing
+    uint32_t crc;           //run via dma peripheral as it is rxed. length is'nt part of dma so could include after dmac complete and validate rxed crc
 } BS_MESSAGE_BUFFER;
+
+// // | 0x7E | LEN | [STUFFED DATA] | [STUFFED CRC32] |
+// RX Flow:
+//      USART RX ISR:
+//          Detects 0x7E (start byte)
+//          Receives LEN
+//              Configures DMA to receive LEN more bytes, rx isr is disabled by nature of DMA
+//              Starts DMA transfer for LEN bytes with CRC32 calculation enabled
+//          CRC runs during DMA (over the stuffed payload + stuffed CRC32)
+//
+//      DMA Complete:
+//          Now you have [STUFFED DATA] + [STUFFED CRC32] in DMA buffer
+//      Manually:
+//          add CRC of LEN(which should never be stuffed)
+// Compare CRCs
+//          unpack the last 4 bytes to get a 16 bit CRC of stuffed data including the CRC
 
 #define USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER))
 
+
+typedef enum
+{
+    MY_USART_EVENT_PACKET_READY,
+    MY_USART_EVENT_PACKET_ERROR,
+} MY_USART_EVENT;
+
+typedef enum
+{
+    MY_USART_PACKET_STATE_IDLE = 0,
+    MY_USART_PACKET_WAIT_START_BYTE,     //must be MY_USART_PACKET_START_BYTE
+    MY_USART_PACKET_WAIT_ADDRESS_BYTE,   //will never be MY_USART_PACKET_START_BYTE
+    MY_USART_PACKET_WAIT_LENGTH_BYTE,    //will never be MY_USART_PACKET_START_BYTE, start dmac transfer
+    MY_USART_PACKET_WAIT_DATA,           //DMA transfer in progress
+    MY_USART_PACKET_COMPLETE,            //DMA transfer complete
+} MY_USART_PACKET_STATE;
+
+typedef void (*MY_USART_OBJ_CALLBACK)(MY_USART_EVENT event, uintptr_t context );
 
 typedef struct
 
 {
     DRV_USART_INDEX index;
-    uint8_t address:4; // address of this USART, 0xF for master, 0-3 for slaves
+    uint8_t address: 4; // address of this USART, 0xF for master, 0-3 for slaves
     sercom_registers_t *sercom_regs;
     USART_DMAC_CHANNELS dmac_channel_tx;
     USART_DMAC_CHANNELS dmac_channel_rx;
     BS_MESSAGE_BUFFER tx_buffer;
     BS_MESSAGE_BUFFER rx_buffer;
     TaskHandle_t task_handle;
+
+    MY_USART_PACKET_STATE packet_state;
+    SERCOM_USART_RING_BUFFER_CALLBACK                   rdCallback;
+
+    uint32_t                                            rdBufferSize;
+
+    USART_ERROR                                         errorStatus;
+
 } MY_USART_OBJ;
 
 
