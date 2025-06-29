@@ -21,7 +21,10 @@
   "targets": {
     "Debug": {
       "excludeList": [
-        "src/config/default/startup_xc32.c"
+        "src/config/default/startup_xc32.c",
+        "src/config/default/peripheral/sercom/usart/plib_sercom1_usart.c",
+        "src/config/default/peripheral/sercom/usart/plib_sercom5_usart.c",
+        "src/config/default/peripheral/sercom/usart/plib_sercom4_usart.c"
       ],
       "toolchain": "GCC",
       "compileConfig": {
