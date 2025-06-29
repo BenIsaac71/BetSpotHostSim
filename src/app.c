@@ -278,10 +278,10 @@ void APP_Tasks ( void )
         // //prepare_to_receive_message(&usart_objs[DRV_USART_INDEX_SLAVE0]);
         // prepare_to_receive_message(&usart_objs[DRV_USART_INDEX_SLAVE1]);
         
-        uint8_t buffer[USART_BUFFER_SIZE] = {0};
+        //uint8_t buffer[USART_BUFFER_SIZE] = {0};
         while (true)
         {
-                SERCOM5_USART_Read(buffer,5);
+//                SERCOM5_USART_Read(buffer,5);
 
 //                transmit_message(p_usart_obj, SLAVE0_ADDRESS);
                 vTaskDelay(500);

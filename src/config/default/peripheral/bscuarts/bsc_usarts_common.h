@@ -127,7 +127,7 @@ typedef uint16_t USART_ERROR;
 
 typedef enum
 {
-        USART_DATA_5_BIT = SERCOM_USART_INT_CTRLB_CHSIZE_5_BIT,
+    USART_DATA_5_BIT = SERCOM_USART_INT_CTRLB_CHSIZE_5_BIT,
     USART_DATA_6_BIT = SERCOM_USART_INT_CTRLB_CHSIZE_6_BIT,
     USART_DATA_7_BIT = SERCOM_USART_INT_CTRLB_CHSIZE_7_BIT,
     USART_DATA_8_BIT = SERCOM_USART_INT_CTRLB_CHSIZE_8_BIT,
@@ -185,7 +185,7 @@ typedef enum
 
 typedef enum
 {
-        USART_STOP_0_BIT = SERCOM_USART_INT_CTRLB_SBMODE_1_BIT,
+    USART_STOP_0_BIT = SERCOM_USART_INT_CTRLB_SBMODE_1_BIT,
     USART_STOP_1_BIT = SERCOM_USART_INT_CTRLB_SBMODE_2_BIT,
 
 
@@ -276,6 +276,8 @@ typedef void (*SERCOM_USART_CALLBACK)( uintptr_t context );
 
 typedef struct
 {
+    sercom_registers_t*                 sercom_regs;
+
     void *                              txBuffer;
 
     size_t                              txSize;
@@ -302,7 +304,7 @@ typedef struct
 
     USART_ERROR                         errorStatus;
 
-} SERCOM_USART_OBJECT;
+} BSC_USART_OBJECT;
 
 
 typedef enum
