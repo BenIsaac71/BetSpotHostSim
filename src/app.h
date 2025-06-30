@@ -106,8 +106,6 @@ typedef enum
 } USART_NOTIFICATION_VALUE;
 
 
-#define MASTER_ADDRESS  0xF
-#define GLOBAL_ADDRESS  0x0
 #define SLAVE0_ADDRESS  0x1
 #define SLAVE1_ADDRESS  0x2
 
@@ -115,45 +113,7 @@ typedef enum
 #define SLAVE0_DATA "Slave0\x55"//len must be same for now
 #define SLAVE1_DATA "Slave1\x55"//len must be same for now
 
-#define DATA_BUFFER_SIZE 20*3 // 20 pixels * 3 bytes per pixel 
-
-#define MY_USART_PACKET_START_BYTE 0X7E
-
-//processed by usart state machine
-typedef struct
-{
-    uint8_t start_byte;      //will always be MY_USART_PACKET_START_BYTE
-    uint16_t data_length;    //will never be MY_USART_PACKET_START_BYTE, length of data in bytes
-}BS_MESSAGE_HEADER;
-
-
-typedef struct __packed
-{
-    uint8_t to_addr : 4;    //will never be MY_USART_PACKET_START_BYTE
-    uint8_t from_addr : 4;  //will never be MY_USART_PACKET_START_BYTE
-    uint8_t op;             //will never be MY_USART_PACKET_START_BYTE
-    uint8_t data[DATA_BUFFER_SIZE * 2]; //2 times for byte stuffing
-    uint32_t crc;           //run via dma peripheral as it is rxed. length is'nt part of dma so could include after dmac complete and validate rxed crc
-} BS_MESSAGE_BUFFER;
-
-// // | 0x7E | LEN | [STUFFED DATA] | [STUFFED CRC32] |
-// RX Flow:
-//      USART RX ISR:
-//          Detects 0x7E (start byte)
-//          Receives LEN
-//              Configures DMA to receive LEN more bytes, rx isr is disabled by nature of DMA
-//              Starts DMA transfer for LEN bytes with CRC32 calculation enabled
-//          CRC runs during DMA (over the stuffed payload + stuffed CRC32)
-//
-//      DMA Complete:
-//          Now you have [STUFFED DATA] + [STUFFED CRC32] in DMA buffer
-//      Manually:
-//          add CRC of LEN(which should never be stuffed)
-// Compare CRCs
-//          unpack the last 4 bytes to get a 16 bit CRC of stuffed data including the CRC
-
-#define USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER))
-
+#define USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER)) // todo;remove
 
 typedef enum
 {
@@ -178,7 +138,7 @@ typedef struct
 {
     DRV_USART_INDEX index;
     BSC_USART_OBJECT* bsc_usart_obj; // pointer to the BSC USART object
-    uint8_t address: 4; // address of this USART, 0xF for master, 0-3 for slaves
+    uint8_t address; // address of this USART, 0xF for master, 0-3 for slaves
     sercom_registers_t *sercom_regs;
     USART_DMAC_CHANNELS dmac_channel_tx;
     USART_DMAC_CHANNELS dmac_channel_rx;

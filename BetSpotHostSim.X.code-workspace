@@ -28,7 +28,12 @@
             "limits": "c",
             "type_traits": "c",
             "xutility": "c",
-            "new": "c"
+            "new": "c",
+            "functional": "c",
+            "xtr1common": "c",
+            "tuple": "c",
+            "utility": "c",
+            "xstring": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

@@ -265,6 +265,8 @@ typedef struct
 {
     BSC_USART_SERCOM_ID                 bsc_usart_id;
 
+    uint8_t                             bsc_address;    
+
     sercom_registers_t*                 sercom_regs;
     
     uint32_t                            peripheral_clk_freq;
@@ -317,6 +319,19 @@ typedef enum
 }SERCOM_USART_EVENT;
 
 
+#define MASTER_ADDRESS 0xFF
+#define GLOBAL_ADDRESS 0x00
+typedef struct __packed
+{
+    uint8_t to_addr;
+    uint8_t data_len;
+    uint8_t from_addr;
+    uint8_t op;
+    uint8_t data[0xFF];
+    uint32_t crc;//run via dma peripheral as it is rxed. length is'nt part of dma so could include after dmac complete and validate rxed crc
+} BS_MESSAGE_BUFFER;
+#define BS_MESSAGE_ADDITIONAL_SIZE sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t)
+#define BS_USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER))
 
 
 // *****************************************************************************

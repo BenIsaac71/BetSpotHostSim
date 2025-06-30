@@ -26,6 +26,7 @@
 // *****************************************************************************
 #include "interrupts.h"
 #include "bsc_usarts.h"
+#include "definitions.h"
 // *****************************************************************************
 // *****************************************************************************
 // // Section: Global Data
@@ -328,37 +329,21 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
     bool writeStatus      = false;
     uint32_t processedSize = 0U;
 
-    if (buffer != NULL)
+    if ((buffer != NULL) && (size > 0U) && (bsc_usart_obj->txBusyStatus == false))
     {
-        if (bsc_usart_obj->txBusyStatus == false)
-        {
-            bsc_usart_obj->txBuffer = buffer;
-            bsc_usart_obj->txSize = size;
-            bsc_usart_obj->txBusyStatus = true;
+        bsc_usart_obj->txBuffer = buffer;
+        bsc_usart_obj->txSize = size;
+        bsc_usart_obj->txBusyStatus = true;
 
-            size_t txSize = bsc_usart_obj->txSize;
+        while (((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk) == false);
+        /* 9th bit set  */
+        bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)(buffer))[processedSize] | 0x100U;
 
-            /* Initiate the transfer by sending first byte */
-            while (((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk) &&
-                    (processedSize < txSize))
-            {
-                if (((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_CTRLB & SERCOM_USART_INT_CTRLB_CHSIZE_Msk) >> SERCOM_USART_INT_CTRLB_CHSIZE_Pos) != 0x01U)
-                {
-                    /* 8-bit mode */
-                    bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)(buffer))[processedSize];
-                }
-                else
-                {
-                    /* 9-bit mode */
-                    bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint16_t *)(buffer))[processedSize];
-                }
-                processedSize += 1U;
-            }
-            bsc_usart_obj->txProcessedSize = processedSize;
-            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTFLAG_DRE_Msk;
+        processedSize += 1U;
+        bsc_usart_obj->txProcessedSize = processedSize;
+        bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTFLAG_DRE_Msk;
 
-            writeStatus = true;
-        }
+        writeStatus = true;
     }
 
     return writeStatus;
@@ -521,25 +506,43 @@ void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc
 
     if (bsc_usart_obj->rxBusyStatus == true)
     {
-        size_t rxSize = bsc_usart_obj->rxSize;
-
-        if (bsc_usart_obj->rxProcessedSize < rxSize)
+        if (bsc_usart_obj->rxProcessedSize < bsc_usart_obj->rxSize)
         {
-            uintptr_t rxContext = bsc_usart_obj->rxContext;
 
             temp = (uint16_t)bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
-            size_t rxProcessedSize = bsc_usart_obj->rxProcessedSize;
 
-            if (((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_CTRLB & SERCOM_USART_INT_CTRLB_CHSIZE_Msk) >> SERCOM_USART_INT_CTRLB_CHSIZE_Pos) != 0x01U)
+            size_t rxProcessedSize = bsc_usart_obj->rxProcessedSize;
+            if(temp & 0x0100U)
             {
-                /* 8-bit mode */
-                ((uint8_t *)bsc_usart_obj->rxBuffer)[rxProcessedSize] = (uint8_t)(temp);
+                if(rxProcessedSize > 0)
+                {
+                    printf("a new packet has started, but the previous packet is not yet processed the rxsize bytes.\n");
+                }
+
+                /* 9th bit is set, so it is a start of packet */
+                rxProcessedSize = 0;
+                bsc_usart_obj->rxProcessedSize = 0;
+               
             }
-            else
+            temp &= 0xFF;   
+
+            //address byte
+            if(rxProcessedSize == 0) 
             {
-                /* 9-bit mode */
-                ((uint16_t *)bsc_usart_obj->rxBuffer)[rxProcessedSize] = temp;
+                if((temp != bsc_usart_obj->bsc_address) || (temp != GLOBAL_ADDRESS))
+                {
+                    return;
+                }
             }
+            else 
+            {
+                // length byte
+                if(rxProcessedSize == 1)
+                {
+                    bsc_usart_obj->rxSize = temp + BS_MESSAGE_ADDITIONAL_SIZE; 
+                }
+            }
+            ((uint8_t *)bsc_usart_obj->rxBuffer)[rxProcessedSize] = (uint8_t)(temp);
 
             /* Increment processed size */
             rxProcessedSize++;
@@ -553,7 +556,7 @@ void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc
 
                 if (bsc_usart_obj->rxCallback != NULL)
                 {
-                    bsc_usart_obj->rxCallback(rxContext);
+                    bsc_usart_obj->rxCallback(bsc_usart_obj->rxContext);
                 }
             }
 
@@ -574,16 +577,8 @@ void static __attribute__((used)) BSC_USART_ISR_TX_Handler(BSC_USART_OBJECT *bsc
 
         while (dataRegisterEmpty && dataAvailable)
         {
-            if (((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_CTRLB & SERCOM_USART_INT_CTRLB_CHSIZE_Msk) >> SERCOM_USART_INT_CTRLB_CHSIZE_Pos) != 0x01U)
-            {
-                /* 8-bit mode */
-                bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)bsc_usart_obj->txBuffer)[txProcessedSize];
-            }
-            else
-            {
-                /* 9-bit mode */
-                bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint16_t *)bsc_usart_obj->txBuffer)[txProcessedSize];
-            }
+            /* 8-bit mode */
+            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)bsc_usart_obj->txBuffer)[txProcessedSize];
             /* Increment processed size */
             txProcessedSize++;
 
