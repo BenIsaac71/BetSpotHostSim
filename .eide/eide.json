@@ -64,7 +64,8 @@
           "src/packs/ATSAMD51J19A_DFP",
           "src/packs/ATSAMD51J19A_DFP/component",
           "src/packs/ATSAMD51J19A_DFP/instance",
-          "src/packs/CMSIS/CMSIS/Core/Include"
+          "src/packs/CMSIS/CMSIS/Core/Include",
+          "src/config/default/peripheral/bscuarts"
         ],
         "libList": [],
         "defineList": [

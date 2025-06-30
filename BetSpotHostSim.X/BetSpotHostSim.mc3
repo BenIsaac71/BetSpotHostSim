@@ -11490,6 +11490,7 @@
   &lt;core dnOrder=&quot;0&quot; id=&quot;GCLK_ID_24_CHEN&quot;&gt;
     &lt;Values dnOrder=&quot;0&quot;&gt;
       &lt;Dynamic dnOrder=&quot;0&quot; id=&quot;core&quot; value=&quot;false&quot;/&gt;
+      &lt;User dnOrder=&quot;1&quot; value=&quot;false&quot;/&gt;
     &lt;/Values&gt;
   &lt;/core&gt;
 &lt;/core&gt;
@@ -25036,7 +25037,9 @@
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="sercom4" name="USART_INTERRUPT_MODE_ENABLE"/>
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom4&gt;
   &lt;sercom4 dnOrder=&quot;0&quot; id=&quot;USART_INTERRUPT_MODE_ENABLE&quot;&gt;
-    &lt;Values dnOrder=&quot;0&quot;/&gt;
+    &lt;Values dnOrder=&quot;0&quot;&gt;
+      &lt;Dynamic dnOrder=&quot;0&quot; id=&quot;sercom4&quot; value=&quot;true&quot;/&gt;
+    &lt;/Values&gt;
   &lt;/sercom4&gt;
 &lt;/sercom4&gt;
 </value>
@@ -25083,7 +25086,9 @@
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="sercom4" name="USART_OPERATING_MODE"/>
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom4&gt;
   &lt;sercom4 dnOrder=&quot;0&quot; id=&quot;USART_OPERATING_MODE&quot;&gt;
-    &lt;Values dnOrder=&quot;0&quot;/&gt;
+    &lt;Values dnOrder=&quot;0&quot;&gt;
+      &lt;User dnOrder=&quot;0&quot; value=&quot;1&quot;/&gt;
+    &lt;/Values&gt;
   &lt;/sercom4&gt;
 &lt;/sercom4&gt;
 </value>
@@ -25164,7 +25169,9 @@
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="sercom4" name="USART_RING_BUFFER_MODE_ENABLE"/>
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom4&gt;
   &lt;sercom4 dnOrder=&quot;0&quot; id=&quot;USART_RING_BUFFER_MODE_ENABLE&quot;&gt;
-    &lt;Values dnOrder=&quot;0&quot;/&gt;
+    &lt;Values dnOrder=&quot;0&quot;&gt;
+      &lt;Dynamic dnOrder=&quot;0&quot; id=&quot;sercom4&quot; value=&quot;false&quot;/&gt;
+    &lt;/Values&gt;
   &lt;/sercom4&gt;
 &lt;/sercom4&gt;
 </value>
@@ -26396,7 +26403,9 @@
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="sercom5" name="USART_INTERRUPT_MODE_ENABLE"/>
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom5&gt;
   &lt;sercom5 dnOrder=&quot;0&quot; id=&quot;USART_INTERRUPT_MODE_ENABLE&quot;&gt;
-    &lt;Values dnOrder=&quot;0&quot;/&gt;
+    &lt;Values dnOrder=&quot;0&quot;&gt;
+      &lt;Dynamic dnOrder=&quot;0&quot; id=&quot;sercom5&quot; value=&quot;true&quot;/&gt;
+    &lt;/Values&gt;
   &lt;/sercom5&gt;
 &lt;/sercom5&gt;
 </value>
@@ -26443,7 +26452,9 @@
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="sercom5" name="USART_OPERATING_MODE"/>
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom5&gt;
   &lt;sercom5 dnOrder=&quot;0&quot; id=&quot;USART_OPERATING_MODE&quot;&gt;
-    &lt;Values dnOrder=&quot;0&quot;/&gt;
+    &lt;Values dnOrder=&quot;0&quot;&gt;
+      &lt;User dnOrder=&quot;0&quot; value=&quot;1&quot;/&gt;
+    &lt;/Values&gt;
   &lt;/sercom5&gt;
 &lt;/sercom5&gt;
 </value>
@@ -26524,7 +26535,9 @@
          <key class="com.microchip.mcc.core.tokenManager.CustomKey" moduleName="sercom5" name="USART_RING_BUFFER_MODE_ENABLE"/>
          <value>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;&lt;sercom5&gt;
   &lt;sercom5 dnOrder=&quot;0&quot; id=&quot;USART_RING_BUFFER_MODE_ENABLE&quot;&gt;
-    &lt;Values dnOrder=&quot;0&quot;/&gt;
+    &lt;Values dnOrder=&quot;0&quot;&gt;
+      &lt;Dynamic dnOrder=&quot;0&quot; id=&quot;sercom5&quot; value=&quot;false&quot;/&gt;
+    &lt;/Values&gt;
   &lt;/sercom5&gt;
 &lt;/sercom5&gt;
 </value>
@@ -27688,7 +27701,7 @@
       </entry>
       <entry>
          <file>..\src\config\default\definitions.h</file>
-         <hash>4f3738af6b9c18c53fefddb868d798a2715d13d742c862d7e19eef86b1452ea4</hash>
+         <hash>8762836884cb6e32adca4f3a4b3ed0a83c5f86eea2fcb36648bfe2829dff5d65</hash>
       </entry>
       <entry>
          <file>..\src\config\default\device.h</file>

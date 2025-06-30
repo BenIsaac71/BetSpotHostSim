@@ -28,6 +28,7 @@
 // *****************************************************************************
 
 #include "definitions.h"
+#include "bsc_usarts.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
@@ -82,9 +83,9 @@ typedef enum
     DRV_USART_INDEX_MAX
 } DRV_USART_INDEX;
 
-#define DRV_USART_SERCOM_REGISTERS_MASTER SERCOM1_REGS
-#define DRV_USART_SERCOM_REGISTERS_SLAVE0 SERCOM5_REGS
-#define DRV_USART_SERCOM_REGISTERS_SLAVE1 SERCOM4_REGS
+#define DRV_BSC_USART_MASTER BSC_USART_SERCOM1
+#define DRV_BSC_USART_SLAVE0 BSC_USART_SERCOM5
+#define DRV_BSC_USART_SLAVE1 BSC_USART_SERCOM4
 
 
 
@@ -176,6 +177,7 @@ typedef struct
 
 {
     DRV_USART_INDEX index;
+    BSC_USART_OBJECT* bsc_usart_obj; // pointer to the BSC USART object
     uint8_t address: 4; // address of this USART, 0xF for master, 0-3 for slaves
     sercom_registers_t *sercom_regs;
     USART_DMAC_CHANNELS dmac_channel_tx;
@@ -183,18 +185,11 @@ typedef struct
     BS_MESSAGE_BUFFER tx_buffer;
     BS_MESSAGE_BUFFER rx_buffer;
     TaskHandle_t task_handle;
-
-    MY_USART_PACKET_STATE packet_state;
-    SERCOM_USART_RING_BUFFER_CALLBACK                   rdCallback;
-
-    uint32_t                                            rdBufferSize;
-
-    USART_ERROR                                         errorStatus;
-
 } MY_USART_OBJ;
 
 
-
+#define USART_0   (&usartObjs[0])
+#define USART_1   (&usartObjs[1])
 
 // *****************************************************************************
 /* Application Data

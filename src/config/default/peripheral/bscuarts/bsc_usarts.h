@@ -42,8 +42,8 @@
 * THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
 *******************************************************************************/
 
-#ifndef PLIB_SERCOM1_USART_H // Guards against multiple inclusion
-#define PLIB_SERCOM1_USART_H
+#ifndef BSC_USART_H // Guards against multiple inclusion
+#define BSC_USART_H
 
 // *****************************************************************************
 // *****************************************************************************
@@ -56,7 +56,7 @@
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus // Provide C++ Compatibility
 
-    extern "C" {
+extern "C" {
 
 #endif
 // DOM-IGNORE-END
@@ -66,56 +66,63 @@
 // Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
+BSC_USART_OBJECT *BSC_USART_Initialize( int usart_number );
 
-void SERCOM1_USART_Initialize( void );
+bool BSC_USART_SerialSetup( BSC_USART_OBJECT *bsc_usart_obj, USART_SERIAL_SETUP *serialSetup, uint32_t clkFrequency );
 
-bool SERCOM1_USART_SerialSetup( USART_SERIAL_SETUP * serialSetup, uint32_t clkFrequency );
+void BSC_USART_Enable( BSC_USART_OBJECT *bsc_usart_obj );
 
-void SERCOM1_USART_Enable( void );
+void BSC_USART_Disable( BSC_USART_OBJECT *bsc_usart_obj );
 
-void SERCOM1_USART_Disable( void );
+void BSC_USART_TransmitterEnable( BSC_USART_OBJECT *bsc_usart_obj );
 
-void SERCOM1_USART_TransmitterEnable( void );
+void BSC_USART_TransmitterDisable( BSC_USART_OBJECT *bsc_usart_obj );
 
-void SERCOM1_USART_TransmitterDisable( void );
+bool BSC_USART_Write( BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t size );
 
-bool SERCOM1_USART_Write( void *buffer, const size_t size );
-
-bool SERCOM1_USART_TransmitComplete( void );
-
-
-bool SERCOM1_USART_WriteIsBusy( void );
-
-size_t SERCOM1_USART_WriteCountGet( void );
-
-void SERCOM1_USART_WriteCallbackRegister( SERCOM_USART_CALLBACK callback, uintptr_t context );
+bool BSC_USART_TransmitComplete( BSC_USART_OBJECT *bsc_usart_obj );
 
 
-void SERCOM1_USART_ReceiverEnable( void );
+bool BSC_USART_WriteIsBusy( BSC_USART_OBJECT *bsc_usart_obj );
 
-void SERCOM1_USART_ReceiverDisable( void );
+size_t BSC_USART_WriteCountGet( BSC_USART_OBJECT *bsc_usart_obj );
 
-bool SERCOM1_USART_Read( void *buffer, const size_t size );
+void BSC_USART_WriteCallbackRegister( BSC_USART_OBJECT *bsc_usart_obj, SERCOM_USART_CALLBACK callback, uintptr_t context );
 
-bool SERCOM1_USART_ReadIsBusy( void );
 
-size_t SERCOM1_USART_ReadCountGet( void );
+void BSC_USART_ReceiverEnable( BSC_USART_OBJECT *bsc_usart_obj );
 
-bool SERCOM1_USART_ReadAbort(void);
+void BSC_USART_ReceiverDisable( BSC_USART_OBJECT *bsc_usart_obj );
 
-void SERCOM1_USART_ReadCallbackRegister( SERCOM_USART_CALLBACK callback, uintptr_t context );
+bool BSC_USART_Read(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t size );
 
-USART_ERROR SERCOM1_USART_ErrorGet( void );
+bool BSC_USART_ReadIsBusy( BSC_USART_OBJECT *bsc_usart_obj );
 
-uint32_t SERCOM1_USART_FrequencyGet( void );
+size_t BSC_USART_ReadCountGet( BSC_USART_OBJECT *bsc_usart_obj );
+
+bool BSC_USART_ReadAbort(BSC_USART_OBJECT *bsc_usart_obj);
+
+void BSC_USART_ReadCallbackRegister( BSC_USART_OBJECT *bsc_usart_obj, SERCOM_USART_CALLBACK callback, uintptr_t context );
+
+USART_ERROR BSC_USART_ErrorGet( BSC_USART_OBJECT *bsc_usart_obj );
+
+uint32_t BSC_USART_FrequencyGet( BSC_USART_OBJECT *bsc_usart_obj);
+
+//dummy for initialization for harmony framework
+#define SERCOM0_USART_Initialize()
+#define SERCOM1_USART_Initialize()
+#define SERCOM2_USART_Initialize()
+#define SERCOM3_USART_Initialize()
+#define SERCOM4_USART_Initialize()
+#define SERCOM5_USART_Initialize()
 
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
 
-    }
+}
 
 #endif
 // DOM-IGNORE-END
 
-#endif //PLIB_SERCOM1_USART_H
+#endif //BSC_USART_H

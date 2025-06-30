@@ -9,7 +9,6 @@ MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
     {
         .index = DRV_USART_INDEX_MASTER,
         .address = MASTER_ADDRESS,
-        .sercom_regs = DRV_USART_SERCOM_REGISTERS_MASTER,
         .dmac_channel_tx = USART_DMA_CHANNEL_MASTER_TX,
         .dmac_channel_rx = USART_DMA_CHANNEL_MASTER_RX,
         .tx_buffer = {.to_addr = GLOBAL_ADDRESS, .from_addr = MASTER_ADDRESS, .data = MASTER_DATA},
@@ -17,7 +16,6 @@ MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
     [DRV_USART_INDEX_SLAVE0] = {
         .index = DRV_USART_INDEX_SLAVE0,
         .address = DRV_USART_INDEX_SLAVE0,
-        .sercom_regs = DRV_USART_SERCOM_REGISTERS_SLAVE0,
         .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE0_RX,
         .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE0_TX,
         .tx_buffer = {.to_addr = MASTER_ADDRESS, .from_addr = DRV_USART_INDEX_SLAVE0, .data = SLAVE0_DATA}
@@ -25,7 +23,6 @@ MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
     [DRV_USART_INDEX_SLAVE1] = {
         .index = DRV_USART_INDEX_SLAVE1,
         .address = DRV_USART_INDEX_SLAVE1,
-        .sercom_regs = DRV_USART_SERCOM_REGISTERS_SLAVE1,
         .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE1_RX,
         .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE1_TX,
         .tx_buffer = {.to_addr = MASTER_ADDRESS, .from_addr = DRV_USART_INDEX_SLAVE1, .data = SLAVE1_DATA}
@@ -51,9 +48,9 @@ void APP_Initialize ( void )
      */
 
     SLAVE_Initialize();
-    MY_USART_OBJ *p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
-    DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_rx, (DMAC_CHANNEL_CALLBACK)USART_RX_DMA_Callback, (uintptr_t)p_usart_obj);
-    DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_tx, (DMAC_CHANNEL_CALLBACK)USART_TX_DMA_Callback, (uintptr_t)p_usart_obj);
+    // MY_USART_OBJ *p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
+    // DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_rx, (DMAC_CHANNEL_CALLBACK)USART_RX_DMA_Callback, (uintptr_t)p_usart_obj);
+    // DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_tx, (DMAC_CHANNEL_CALLBACK)USART_TX_DMA_Callback, (uintptr_t)p_usart_obj);
     //TODO create TXC callback rather clr te line in isr directly
 }
 
@@ -265,43 +262,29 @@ void APP_Tasks ( void )
     uint32_t ulNotificationValue;
 
     USART_TE_Set(p_usart_obj->index);//Driver needs a to warm up on startup
+    // Initialize the USART objects bsc usart object
+    usart_objs[DRV_USART_INDEX_MASTER].bsc_usart_obj = BSC_USART_Initialize( DRV_BSC_USART_MASTER );
+    usart_objs[DRV_USART_INDEX_SLAVE0].bsc_usart_obj = BSC_USART_Initialize( DRV_BSC_USART_SLAVE0 );
+    usart_objs[DRV_USART_INDEX_SLAVE1].bsc_usart_obj = BSC_USART_Initialize( DRV_BSC_USART_SLAVE1 );
+
+    
     vTaskDelay(pdMS_TO_TICKS(10)); // Delay to allow other tasks to initialize
+    uint16_t buffer[5] = {0};
 
     /* Check the application's current state. */
     switch ( appData.state )
     {
     /* Application's initial state. */
     case APP_STATE_INIT:
-        usart_objs[DRV_USART_INDEX_MASTER].task_handle = xAPP_Tasks;
-        //test code to run dma testing out of app task
-        // prepare_to_receive_message(&usart_oebjs[DRV_USART_INDEX_MASTER]);
-        // //prepare_to_receive_message(&usart_objs[DRV_USART_INDEX_SLAVE0]);
-        // prepare_to_receive_message(&usart_objs[DRV_USART_INDEX_SLAVE1]);
-        
-        //uint8_t buffer[USART_BUFFER_SIZE] = {0};
         while (true)
         {
-//                SERCOM5_USART_Read(buffer,5);
-
-//                transmit_message(p_usart_obj, SLAVE0_ADDRESS);
-                vTaskDelay(500);
-                printf("\n");
-                vTaskDelay(500);
-                // transmit_message(p_usart_obj, SLAVE1_ADDRESS);
-                // vTaskDelay(1000);
+            BSC_USART_Read( usart_objs[DRV_USART_INDEX_SLAVE0].bsc_usart_obj, buffer, 5 );
+            BSC_USART_Write( usart_objs[DRV_USART_INDEX_MASTER].bsc_usart_obj, buffer, 5 );
 
 
-
-                // if (xTaskNotifyWait(0,  0xFFFFFFFF, &ulNotificationValue, 5))
-                // {
-                //     for (int j = 0; j < DRV_USART_INDEX_MAX; j++)
-                //     {
-                //         if (ulNotificationValue & USART_SIGNAL_COMPLETE_RX(j))
-                //         {
-                //             printf("%d\n", j);
-                //         }
-                //     }
-                // }
+            vTaskDelay(500);
+            printf("\n");
+            vTaskDelay(500);
         }
 
 

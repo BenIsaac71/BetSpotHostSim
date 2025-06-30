@@ -5,10 +5,10 @@
     Microchip Technology Inc.
 
   File Name
-    plib_sercom_usart_common.h
+    bsc_usart_usart_common.h
 
   Summary
-    Data Type definition of the USART Peripheral Interface Plib.
+    Data Type definition of the BSC USART Peripheral Interface.
 
   Description
     This file defines the Data Types for the USART Plib.
@@ -17,33 +17,8 @@
     None.
 *******************************************************************************/
 
-// DOM-IGNORE-BEGIN
-/*******************************************************************************
-* Copyright (C) 2018 Microchip Technology Inc. and its subsidiaries.
-*
-* Subject to your compliance with these terms, you may use Microchip software
-* and any derivatives exclusively with Microchip products. It is your
-* responsibility to comply with third party license terms applicable to your
-* use of third party software (including open source software) that may
-* accompany Microchip software.
-*
-* THIS SOFTWARE IS SUPPLIED BY MICROCHIP "AS IS". NO WARRANTIES, WHETHER
-* EXPRESS, IMPLIED OR STATUTORY, APPLY TO THIS SOFTWARE, INCLUDING ANY IMPLIED
-* WARRANTIES OF NON-INFRINGEMENT, MERCHANTABILITY, AND FITNESS FOR A
-* PARTICULAR PURPOSE.
-*
-* IN NO EVENT WILL MICROCHIP BE LIABLE FOR ANY INDIRECT, SPECIAL, PUNITIVE,
-* INCIDENTAL OR CONSEQUENTIAL LOSS, DAMAGE, COST OR EXPENSE OF ANY KIND
-* WHATSOEVER RELATED TO THE SOFTWARE, HOWEVER CAUSED, EVEN IF MICROCHIP HAS
-* BEEN ADVISED OF THE POSSIBILITY OR THE DAMAGES ARE FORESEEABLE. TO THE
-* FULLEST EXTENT ALLOWED BY LAW, MICROCHIP'S TOTAL LIABILITY ON ALL CLAIMS IN
-* ANY WAY RELATED TO THIS SOFTWARE WILL NOT EXCEED THE AMOUNT OF FEES, IF ANY,
-* THAT YOU HAVE PAID DIRECTLY TO MICROCHIP FOR THIS SOFTWARE.
-*******************************************************************************/
-// DOM-IGNORE-END
-
-#ifndef PLIB_SERCOM_USART_COMMON_H // Guards against multiple inclusion
-#define PLIB_SERCOM_USART_COMMON_H
+#ifndef BSC_USART_COMMON_H // Guards against multiple inclusion
+#define BSC_USART_COMMON_H
 
 // *****************************************************************************
 // *****************************************************************************
@@ -94,6 +69,18 @@
 // *****************************************************************************
 // *****************************************************************************
 // *****************************************************************************
+
+typedef enum 
+{
+    BSC_USART_SERCOM0,
+    BSC_USART_SERCOM1,
+    BSC_USART_SERCOM2,
+    BSC_USART_SERCOM3,
+    BSC_USART_SERCOM4,
+    BSC_USART_SERCOM5,
+    BSC_USART_SERCOM_MAX
+} BSC_USART_SERCOM_ID;
+
 
 // *****************************************************************************
 /* USART Errors
@@ -261,7 +248,7 @@ typedef struct
 typedef void (*SERCOM_USART_CALLBACK)( uintptr_t context );
 
 // *****************************************************************************
-/* SERCOM USART Object
+/* BSC USART Object
 
   Summary:
     Defines the data type for the data structures used for
@@ -276,7 +263,11 @@ typedef void (*SERCOM_USART_CALLBACK)( uintptr_t context );
 
 typedef struct
 {
+    BSC_USART_SERCOM_ID                 bsc_usart_id;
+
     sercom_registers_t*                 sercom_regs;
+    
+    uint32_t                            peripheral_clk_freq;
 
     void *                              txBuffer;
 
@@ -325,75 +316,8 @@ typedef enum
     SERCOM_USART_EVENT_BREAK_SIGNAL_DETECTED,
 }SERCOM_USART_EVENT;
 
-// *****************************************************************************
-/* Callback Function Pointer
 
-  Summary:
-    Defines the data type and function signature for the USART peripheral
-    callback function.
 
-  Description:
-    This data type defines the function signature for the USART peripheral
-    callback function. The USART peripheral will call back the client's
-    function with this signature when the USART buffer event has occurred.
-
-  Remarks:
-    None.
-*/
-
-typedef void (*SERCOM_USART_RING_BUFFER_CALLBACK)(SERCOM_USART_EVENT event, uintptr_t context );
-
-// *****************************************************************************
-/* SERCOM USART Ring Buffer Object
-
-  Summary:
-    Defines the data type for the data structures used for
-    peripheral operations.
-
-  Description:
-    This may be for used for peripheral operations.
-
-  Remarks:
-    None.
-*/
-
-typedef struct
-{
-    SERCOM_USART_RING_BUFFER_CALLBACK                   wrCallback;
-
-    uintptr_t                                           wrContext;
-
-    uint32_t                                            wrInIndex;
-
-    uint32_t                                            wrOutIndex;
-
-    uint32_t                                            wrBufferSize;
-
-    bool                                                isWrNotificationEnabled;
-
-    uint32_t                                            wrThreshold;
-
-    bool                                                isWrNotifyPersistently;
-
-    SERCOM_USART_RING_BUFFER_CALLBACK                   rdCallback;
-
-    uintptr_t                                           rdContext;
-
-    uint32_t                                            rdInIndex;
-
-    uint32_t                                            rdOutIndex;
-
-    uint32_t                                            rdBufferSize;
-
-    bool                                                isRdNotificationEnabled;
-
-    uint32_t                                            rdThreshold;
-
-    bool                                                isRdNotifyPersistently;
-
-    USART_ERROR                                         errorStatus;
-
-} SERCOM_USART_RING_BUFFER_OBJECT;
 
 // *****************************************************************************
 // DOM-IGNORE-BEGIN
@@ -404,4 +328,4 @@ typedef struct
 #endif
 // DOM-IGNORE-END
 
-#endif //PLIB_SERCOM_USART_COMMON_H
+#endif //BSC_USART_COMMON_H
