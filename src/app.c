@@ -39,7 +39,7 @@ void prepare_to_receive_message(MY_USART_OBJ *p_usart_obj);
 
 
 // *****************************************************************************
-void APP_Initialize ( void )
+void APP_Initialize(void)
 {
     /* Place the App state machine in its initial state. */
     appData.state = APP_STATE_INIT;
@@ -47,7 +47,7 @@ void APP_Initialize ( void )
      * parameters.
      */
 
-    SLAVE_Initialize();
+    //SLAVE_Initialize();
     // MY_USART_OBJ *p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
     // DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_rx, (DMAC_CHANNEL_CALLBACK)USART_RX_DMA_Callback, (uintptr_t)p_usart_obj);
     // DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_tx, (DMAC_CHANNEL_CALLBACK)USART_TX_DMA_Callback, (uintptr_t)p_usart_obj);
@@ -168,7 +168,7 @@ void USART_TE_Clear(DRV_USART_INDEX index)
 
 void prepare_to_receive_message(MY_USART_OBJ *p_usart_obj)
 {
-    if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_rx, (uint8_t * )&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, &p_usart_obj->rx_buffer, USART_BUFFER_SIZE) != true)
+    if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_rx, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, &p_usart_obj->rx_buffer, USART_BUFFER_SIZE) != true)
     {
         printf("%d<- error\n", p_usart_obj->index);
     }
@@ -185,7 +185,7 @@ void transmit_message(MY_USART_OBJ *p_usart_obj, int to_addr)
 
     //turn on the usart txc interrupt
     p_usart_obj->tx_buffer.to_addr = to_addr; // Set the destination address for the message
-    if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t * )&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, USART_BUFFER_SIZE) != true)
+    if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, USART_BUFFER_SIZE) != true)
     {
         printf("%d-> error\n", p_usart_obj->index);
         return;
@@ -255,36 +255,58 @@ bool process_response(MY_USART_OBJ *p_usart_obj)
 
 
 // *****************************************************************************
+#define BUFFER_SIZE 5
+uint16_t tx_buffer[BUFFER_SIZE] = {0xAA, 0, 0, 0, 0x55}; // Example data to send
+uint16_t rx_buffer[BUFFER_SIZE] = {0}; // Buffer to receive data
 
-void APP_Tasks ( void )
+
+void APP_Tasks(void)
 {
     MY_USART_OBJ *p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
     uint32_t ulNotificationValue;
 
     USART_TE_Set(p_usart_obj->index);//Driver needs a to warm up on startup
     // Initialize the USART objects bsc usart object
-    usart_objs[DRV_USART_INDEX_MASTER].bsc_usart_obj = BSC_USART_Initialize( DRV_BSC_USART_MASTER );
-    usart_objs[DRV_USART_INDEX_SLAVE0].bsc_usart_obj = BSC_USART_Initialize( DRV_BSC_USART_SLAVE0 );
-    usart_objs[DRV_USART_INDEX_SLAVE1].bsc_usart_obj = BSC_USART_Initialize( DRV_BSC_USART_SLAVE1 );
+    usart_objs[DRV_USART_INDEX_MASTER].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_MASTER);
+    usart_objs[DRV_USART_INDEX_SLAVE0].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_SLAVE0);
+    usart_objs[DRV_USART_INDEX_SLAVE1].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_SLAVE1);
 
-    
+
     vTaskDelay(pdMS_TO_TICKS(10)); // Delay to allow other tasks to initialize
-    uint16_t buffer[5] = {0};
 
     /* Check the application's current state. */
-    switch ( appData.state )
+    switch (appData.state)
     {
     /* Application's initial state. */
     case APP_STATE_INIT:
         while (true)
         {
-            BSC_USART_Read( usart_objs[DRV_USART_INDEX_SLAVE0].bsc_usart_obj, buffer, 5 );
-            BSC_USART_Write( usart_objs[DRV_USART_INDEX_MASTER].bsc_usart_obj, buffer, 5 );
+            p_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
+            BSC_USART_Read(p_usart_obj->bsc_usart_obj, rx_buffer, BUFFER_SIZE);
+
+            p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
+            USART_TE_Set(p_usart_obj->index); // Driver needs a to warm up on startup
+            BSC_USART_Write(p_usart_obj->bsc_usart_obj, tx_buffer, BUFFER_SIZE);
+            while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for TX to complete
+            USART_TE_Clear(p_usart_obj->index); // Driver needs a to warm up on startup
+
+            vTaskDelay(2);
+        }
 
 
-            vTaskDelay(500);
-            printf("\n");
-            vTaskDelay(500);
+        while (true)
+        {
+            for (int i = 0; i < DRV_USART_INDEX_MAX; i++)
+            {
+                p_usart_obj = &usart_objs[i];
+
+                USART_TE_Set(p_usart_obj->index); // Driver needs a to warm up on startup
+                BSC_USART_Write(p_usart_obj->bsc_usart_obj, tx_buffer, sizeof(tx_buffer));
+                while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for TX to complete
+                USART_TE_Clear(p_usart_obj->index); // Driver needs a to warm up on startup
+                vTaskDelay(1);
+            }
+            vTaskDelay(2);
         }
 
 
@@ -320,7 +342,7 @@ void APP_Tasks ( void )
             printf("M->%d\n", i);
             p_usart_obj->tx_buffer.to_addr = i;
             USART_TE_Set(p_usart_obj->index);
-            if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t * )&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, USART_BUFFER_SIZE) != true)
+            if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, USART_BUFFER_SIZE) != true)
             {
                 printf("M-> error\n");
                 while (true)
