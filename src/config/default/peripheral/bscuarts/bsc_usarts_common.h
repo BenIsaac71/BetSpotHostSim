@@ -30,6 +30,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include "device.h"
+#include "peripheral/dmac/plib_dmac.h"
 
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus // Provide C++ Compatibility
@@ -182,29 +183,6 @@ typedef enum
 } USART_STOP;
 
 // *****************************************************************************
-/* USART LIN Command
-
-  Summary:
-    Defines the data type for the USART peripheral LIN Command.
-
-  Description:
-    This may be used to set the USART LIN Master mode command.
-
-  Remarks:
-    None.
-*/
-
-typedef enum
-{
-    USART_LIN_MASTER_CMD_NONE = SERCOM_USART_INT_CTRLB_LINCMD_NONE,
-
-    USART_LIN_MASTER_CMD_SOFTWARE_CONTROLLED = SERCOM_USART_INT_CTRLB_LINCMD_SOFTWARE_CONTROL_TRANSMIT_CMD,
-
-    USART_LIN_MASTER_CMD_AUTO_TRANSMIT = SERCOM_USART_INT_CTRLB_LINCMD_AUTO_TRANSMIT_CMD
-
-} USART_LIN_MASTER_CMD;
-
-// *****************************************************************************
 /* USART Serial Configuration
 
   Summary:
@@ -270,6 +248,10 @@ typedef struct
 
     TE_PIN_FUNCTION                     te_clr;
 
+    DMAC_CHANNEL                        dmac_channel_tx;
+    
+    DMAC_CHANNEL                        dmac_channel_rx;
+    
     uint8_t                             address;
 
     sercom_registers_t*                 sercom_regs;

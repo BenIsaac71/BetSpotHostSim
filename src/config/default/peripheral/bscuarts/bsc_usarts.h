@@ -112,6 +112,8 @@ uint32_t BSC_USART_FrequencyGet( BSC_USART_OBJECT *bsc_usart_obj);
 
 void BSC_USART_SetAddress(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address);
 
+void BSC_USART_SetMode(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address);
+
 //dummy for initialization for harmony framework
 #define SERCOM0_USART_Initialize()
 #define SERCOM1_USART_Initialize()

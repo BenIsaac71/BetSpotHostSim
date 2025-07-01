@@ -60,11 +60,15 @@ BSC_USART_TE_funcs(5)
 #define BSC_USART_OBJECT_INIT(id) \
     { \
         .bsc_usart_id = BSC_USART_SERCOM##id, \
+        .dmac_channel_tx = SERCOM##id##_DMAC_TX_CHANNEL, \
+        .dmac_channel_rx = SERCOM##id##_DMAC_RX_CHANNEL, \
         .te_set = BSC_TE_SET_SERCOM##id, \
         .te_clr = BSC_TE_CLR_SERCOM##id, \
         .sercom_regs = SERCOM##id##_REGS, \
         .peripheral_clk_freq = 60000000UL, \
     }
+
+
 static BSC_USART_OBJECT bsc_usart_objs[BSC_USART_SERCOM_MAX] =
 {
     BSC_USART_OBJECT_INIT(0),
@@ -169,10 +173,6 @@ BSC_USART_OBJECT *BSC_USART_Initialize(int usart_number, uint8_t address)
 
     return bsc_usart_obj;
 }
-
-
-
-
 
 uint32_t BSC_USART_FrequencyGet(BSC_USART_OBJECT *bsc_usart_obj)
 {
@@ -338,7 +338,7 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
         bsc_usart_obj->txBusyStatus = true;
 
         bsc_usart_obj->te_set();
-        
+
         while (((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk) == false);
         /* 9th bit set  */
         bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)(buffer))[processedSize] | 0x100U;
@@ -596,22 +596,22 @@ void static __attribute__((used)) BSC_USART_ISR_TX_Handler(BSC_USART_OBJECT *bsc
 
             bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
         }
-\    }
+    }
 }
 
 void static __attribute__((used)) BSC_USART_ISR_TXC_Handler(BSC_USART_OBJECT *bsc_usart_obj)
 {
-        bsc_usart_obj->te_clr();
+    bsc_usart_obj->te_clr();
 
-        bsc_usart_obj->txBusyStatus = false;
-        bsc_usart_obj->txSize = 0U;
-        bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
+    bsc_usart_obj->txBusyStatus = false;
+    bsc_usart_obj->txSize = 0U;
+    bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
 
-        if (bsc_usart_obj->txCallback != NULL)
-        {
-            uintptr_t txContext = bsc_usart_obj->txContext;
-            bsc_usart_obj->txCallback(txContext);
-        }
+    if (bsc_usart_obj->txCallback != NULL)
+    {
+        uintptr_t txContext = bsc_usart_obj->txContext;
+        bsc_usart_obj->txCallback(txContext);
+    }
 }
 
 void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usart_obj)
@@ -637,7 +637,7 @@ void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usar
 
         testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == SERCOM_USART_INT_INTFLAG_TXC_Msk);
         testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTFLAG_TXC_Msk) == SERCOM_USART_INT_INTFLAG_TXC_Msk) && testCondition;
-        /* Checks for transmit complete flag */
+        /* Checks for data register empty flag */
         if (testCondition)
         {
             BSC_USART_ISR_TXC_Handler(bsc_usart_obj);
@@ -655,6 +655,11 @@ void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usar
 }
 
 void BSC_USART_SetAddress(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address)
+{
+    bsc_usart_obj->address = address;
+}
+
+void BSC_USART_SetMode(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address)
 {
     bsc_usart_obj->address = address;
 }

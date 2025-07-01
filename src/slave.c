@@ -107,17 +107,17 @@ void vSlaveTask(void *pvParameters);
 
 void SLAVE_Initialize ( void )
 {
-    MY_USART_OBJ *p_usart_obj;
+    //MY_USART_OBJ *p_usart_obj;
 
-    p_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
+    //p_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
     xTaskCreate(vSlaveTask, "Slave0Task", 1024, &slaveContexts[0], tskIDLE_PRIORITY + 1, &xSlave0TaskHandle);
-    DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_tx, (DMAC_CHANNEL_CALLBACK)USART_TX_DMA_Callback, (uintptr_t)&usart_objs[DRV_USART_INDEX_SLAVE0]);
-    DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_rx, (DMAC_CHANNEL_CALLBACK)USART_RX_DMA_Callback, (uintptr_t)&usart_objs[DRV_USART_INDEX_SLAVE0]);
+    // DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_tx, (DMAC_CHANNEL_CALLBACK)USART_TX_DMA_Callback, (uintptr_t)&usart_objs[DRV_USART_INDEX_SLAVE0]);
+    // DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_rx, (DMAC_CHANNEL_CALLBACK)USART_RX_DMA_Callback, (uintptr_t)&usart_objs[DRV_USART_INDEX_SLAVE0]);
 
-    p_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE1];
+    //p_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE1];
     xTaskCreate(vSlaveTask, "Slave1Task", 1024, &slaveContexts[1], tskIDLE_PRIORITY + 1, &xSlave1TaskHandle);
-    DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_tx, (DMAC_CHANNEL_CALLBACK)USART_TX_DMA_Callback, (uintptr_t)&usart_objs[DRV_USART_INDEX_SLAVE1]);
-    DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_rx, (DMAC_CHANNEL_CALLBACK)USART_RX_DMA_Callback, (uintptr_t)&usart_objs[DRV_USART_INDEX_SLAVE1]);
+    // DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_tx, (DMAC_CHANNEL_CALLBACK)USART_TX_DMA_Callback, (uintptr_t)&usart_objs[DRV_USART_INDEX_SLAVE1]);
+    // DMAC_ChannelCallbackRegister(p_usart_obj->dmac_channel_rx, (DMAC_CHANNEL_CALLBACK)USART_RX_DMA_Callback, (uintptr_t)&usart_objs[DRV_USART_INDEX_SLAVE1]);
 
     // /* TODO: Initialize your application's state machine and other
     //  * parameters.
@@ -138,7 +138,7 @@ void vSlaveTask(void *pvParameters)
     SLAVE_TASK_CONTEXT *ctx = (SLAVE_TASK_CONTEXT *)pvParameters;
     MY_USART_OBJ *p_usart_obj = ctx->usartObj;
     SLAVE_DATA *slaveData = &ctx->stateData;
-    uint32_t ulNotificationValue;
+    //uint32_t ulNotificationValue;
 
     p_usart_obj->task_handle = xTaskGetCurrentTaskHandle();
 
@@ -153,9 +153,9 @@ void vSlaveTask(void *pvParameters)
             //test code to run dma testing out of app task
             while (true)
             {
-                if (xTaskNotifyWait(0,  USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 5))
+                //if (xTaskNotifyWait(0,  USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 5))
                 {
-                    if(ulNotificationValue & USART_SIGNAL_COMPLETE_RX(p_usart_obj->index))
+                    //if(ulNotificationValue & USART_SIGNAL_COMPLETE_RX(p_usart_obj->index))
                     {
                         printf("S%d<-%s\n", p_usart_obj->index, p_usart_obj->rx_buffer.data);
                     }
@@ -174,12 +174,12 @@ void vSlaveTask(void *pvParameters)
         case SLAVE_STATE_WAITING_FOR_MESSAGE:
         {
             //receive message from master
-            if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_rx, (uint8_t * )&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, &p_usart_obj->rx_buffer, USART_BUFFER_SIZE) != true)
+            //if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_rx, (uint8_t * )&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, &p_usart_obj->rx_buffer, USART_BUFFER_SIZE) != true)
             {
                 printf("S%d<- error\n",p_usart_obj->index);
             }
-            xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 10000);
-            if (ulNotificationValue == 0)
+            //xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 10000);
+            //if (ulNotificationValue == 0)
             {
                 printf("S%d<-timout\n", p_usart_obj->index);
             }
@@ -213,20 +213,20 @@ void vSlaveTask(void *pvParameters)
         {
             //transmit response to master
             printf("S%d->M\n", p_usart_obj->index);
-            USART_TE_Set(p_usart_obj->index);
-            if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t * )&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, USART_BUFFER_SIZE) != true)
+            //USART_TE_Set(p_usart_obj->index);
+            //if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t * )&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, USART_BUFFER_SIZE) != true)
             {
                 printf("fail\n");
             }
-            xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_TX(p_usart_obj->index), &ulNotificationValue, 100);
-            if (ulNotificationValue == 0)
+            //xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_TX(p_usart_obj->index), &ulNotificationValue, 100);
+            //if (ulNotificationValue == 0)
             {
                 printf("S->timout\n");
                 while(true)
                     ;
             }
 
-            while ((p_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == 0);
+            //while ((p_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == 0);
 
             slaveData->state = SLAVE_STATE_WAITING_FOR_MESSAGE;
         }

@@ -9,20 +9,14 @@ MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
     [DRV_USART_INDEX_MASTER] =
     {
         .index = DRV_USART_INDEX_MASTER,
-        .dmac_channel_tx = USART_DMA_CHANNEL_MASTER_TX,
-        .dmac_channel_rx = USART_DMA_CHANNEL_MASTER_RX,
         .tx_buffer = {.to_addr = GLOBAL_ADDRESS, .data_len = sizeof(MASTER_DATA) - 1,  .from_addr = MASTER_ADDRESS, .data = MASTER_DATA FAKE_CRC}
     },
     [DRV_USART_INDEX_SLAVE0] = {
         .index = DRV_USART_INDEX_SLAVE0,
-        .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE0_RX,
-        .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE0_TX,
         .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE0_DATA) - 1, .from_addr = SLAVE0_ADDRESS, .data = SLAVE0_DATA FAKE_CRC}
     },
     [DRV_USART_INDEX_SLAVE1] = {
         .index = DRV_USART_INDEX_SLAVE1,
-        .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE1_RX,
-        .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE1_TX,
         .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE1_DATA) - 1, .from_addr = SLAVE1_ADDRESS, .data = SLAVE1_DATA FAKE_CRC}
     }
 };
@@ -56,11 +50,11 @@ void APP_Initialize(void)
 void USART_TX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
 {
 
-    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)contextHandle;
+    //MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)contextHandle;
 
     //from isr signal app task to process the next transfer
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    uint32_t ulValue = USART_SIGNAL_COMPLETE_TX(p_usart_obj->index);
+    //uint32_t ulValue = USART_SIGNAL_COMPLETE_TX(p_usart_obj->index);
 
     //printf("TX DMA transfer completed for USART index %d\n", p_usart_obj->index);
     if (event == DMAC_TRANSFER_EVENT_COMPLETE)
@@ -69,12 +63,12 @@ void USART_TX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
     }
     else if (event == DMAC_TRANSFER_EVENT_ERROR)
     {
-        ulValue |= USART_SIGNAL_ERROR_FLAG; // Set error bit
+        //ulValue |= USART_SIGNAL_ERROR_FLAG; // Set error bit
         // Handle transfer error
         printf("error DMA TX");
         return;
     }
-    xTaskNotifyFromISR(p_usart_obj->task_handle, ulValue, eSetBits, &xHigherPriorityTaskWoken);
+    //xTaskNotifyFromISR(p_usart_obj->task_handle, ulValue, eSetBits, &xHigherPriorityTaskWoken);
     if (xHigherPriorityTaskWoken == pdTRUE)
     {
         // If a higher priority task was woken, yield to it
@@ -92,7 +86,7 @@ void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
 
     //from isr signal app task to process the next transfer
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    uint32_t ulValue = USART_SIGNAL_COMPLETE_RX(p_usart_obj->index);
+    //uint32_t ulValue = USART_SIGNAL_COMPLETE_RX(p_usart_obj->index);
 
     //printf("RX DMA transfer completed for USART index %d\n", p_usart_obj->index);
     if (event == DMAC_TRANSFER_EVENT_COMPLETE)
@@ -101,7 +95,7 @@ void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
     }
     else if (event == DMAC_TRANSFER_EVENT_ERROR)
     {
-        ulValue |= USART_SIGNAL_ERROR_FLAG; // Set error bit
+        //ulValue |= USART_SIGNAL_ERROR_FLAG; // Set error bit
         // Handle transfer error
         printf("error DMA RX");
         return;
@@ -110,7 +104,7 @@ void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
     //signal task if its for our addres or global address
 //    if ((p_usart_obj->rx_buffer.to_addr == p_usart_obj->address) || (p_usart_obj->rx_buffer.to_addr == GLOBAL_ADDRESS))
     {
-        xTaskNotifyFromISR(p_usart_obj->task_handle, ulValue, eSetBits, &xHigherPriorityTaskWoken);
+        //xTaskNotifyFromISR(p_usart_obj->task_handle, ulValue, eSetBits, &xHigherPriorityTaskWoken);
         if (xHigherPriorityTaskWoken == pdTRUE)
         {
             // If a higher priority task was woken, yield to it
@@ -125,7 +119,7 @@ void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
 
 void prepare_to_receive_message(MY_USART_OBJ *p_usart_obj)
 {
-    if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_rx, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, &p_usart_obj->rx_buffer, BS_USART_BUFFER_SIZE) != true)
+    // if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_rx, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, &p_usart_obj->rx_buffer, BS_USART_BUFFER_SIZE) != true)
     {
         printf("%d<- error\n", p_usart_obj->index);
     }
@@ -135,24 +129,24 @@ void prepare_to_receive_message(MY_USART_OBJ *p_usart_obj)
 
 void transmit_message(MY_USART_OBJ *p_usart_obj, int to_addr)
 {
-    uint32_t ulNotificationValue;
+    //uint32_t ulNotificationValue;
     printf(" T%d", p_usart_obj->index);
 
 //    USART_TE_Set(p_usart_obj->index);
 
     //turn on the usart txc interrupt
     p_usart_obj->tx_buffer.to_addr = to_addr; // Set the destination address for the message
-    if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, BS_USART_BUFFER_SIZE) != true)
+//    if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, BS_USART_BUFFER_SIZE) != true)
     {
         printf("%d-> error\n", p_usart_obj->index);
         return;
     }
     //p_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = SERCOM_USART_INT_INTENSET_TXC_Msk; // Enable TXC interrupt
 
-    xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_TX(p_usart_obj->index), &ulNotificationValue, OSAL_WAIT_FOREVER);
+    //xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_TX(p_usart_obj->index), &ulNotificationValue, OSAL_WAIT_FOREVER);
 
     //until we fix the TXC interrupt, we just have to poll the TXC before continuing because of half duplex
-    while ((p_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == 0);
+//    while ((p_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == 0);
 
 //    USART_TE_Clear(p_usart_obj->index); // Clear the TE line after transmission
 
@@ -167,9 +161,9 @@ void transmit_message(MY_USART_OBJ *p_usart_obj, int to_addr)
 
 bool process_message(MY_USART_OBJ *p_usart_obj)
 {
-    uint32_t ulNotificationValue;
-    xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 1);
-    if (ulNotificationValue == USART_SIGNAL_COMPLETE_RX(p_usart_obj->index))
+    //uint32_t ulNotificationValue;
+    //xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 1);
+    //if (ulNotificationValue == USART_SIGNAL_COMPLETE_RX(p_usart_obj->index))
     {
 
         BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
@@ -198,9 +192,9 @@ bool process_message(MY_USART_OBJ *p_usart_obj)
 
 bool process_response(MY_USART_OBJ *p_usart_obj)
 {
-    uint32_t ulNotificationValue;
-    xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 5);
-    if (ulNotificationValue == USART_SIGNAL_COMPLETE_RX(p_usart_obj->index))
+    //uint32_t ulNotificationValue;
+//    xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 5);
+    //if (ulNotificationValue == USART_SIGNAL_COMPLETE_RX(p_usart_obj->index))
     {
         BS_MESSAGE_BUFFER *rsp = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
         printf("%d<-A%d[%s]\n", rsp->to_addr, rsp->from_addr, rsp->data);
@@ -208,6 +202,8 @@ bool process_response(MY_USART_OBJ *p_usart_obj)
     }
     return false;
 }
+
+
 
 void begin_read(MY_USART_OBJ *p_usart_obj)
 {
@@ -229,17 +225,65 @@ void block_rx_ready(MY_USART_OBJ *p_usart_obj)
 }
 
 
+void MASTER_TX_Callback(uintptr_t context)
+{
+    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
+
+    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
+    printf("MTXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
+}
+void MASTER_RX_Callback(uintptr_t context)
+{
+    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
+
+    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
+    printf("MRXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
+}
+
+void SLAVE_TX_Callback(uintptr_t context)
+{
+    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
+
+    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
+    printf("STXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
+}
+void SLAVE_RX_Callback(uintptr_t context)
+{
+    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
+
+    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
+    printf("SRXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
+}
+
+
 void APP_Tasks(void)
 {
     MY_USART_OBJ *p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
     uint32_t ulNotificationValue;
 
     // Initialize the USART objects bsc usart object
-    usart_objs[DRV_USART_INDEX_MASTER].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_MASTER, MASTER_ADDRESS);
-
-    usart_objs[DRV_USART_INDEX_SLAVE0].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_SLAVE0, SLAVE0_ADDRESS);
-    usart_objs[DRV_USART_INDEX_SLAVE1].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_SLAVE1, SLAVE1_ADDRESS);
-
+    // Mater USART initialization and callbacks
+    {
+        MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
+        BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM1, MASTER_ADDRESS);
+        my_usart_obj->bsc_usart_obj = bsc_usart_obj;
+        BSC_USART_WriteCallbackRegister(bsc_usart_obj, MASTER_TX_Callback, (uintptr_t)my_usart_obj);
+        BSC_USART_ReadCallbackRegister(bsc_usart_obj, MASTER_RX_Callback, (uintptr_t)my_usart_obj);
+    }
+    {
+        MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
+        BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM5, SLAVE0_ADDRESS);
+        my_usart_obj->bsc_usart_obj = bsc_usart_obj;
+        BSC_USART_WriteCallbackRegister(bsc_usart_obj, SLAVE_TX_Callback, (uintptr_t)my_usart_obj);
+        BSC_USART_ReadCallbackRegister(bsc_usart_obj, SLAVE_RX_Callback, (uintptr_t)my_usart_obj);
+    }
+    {
+        MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE1];
+        BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM4, SLAVE1_ADDRESS);
+        my_usart_obj->bsc_usart_obj = bsc_usart_obj;
+        BSC_USART_WriteCallbackRegister(bsc_usart_obj, SLAVE_TX_Callback, (uintptr_t)my_usart_obj);
+        BSC_USART_ReadCallbackRegister(bsc_usart_obj, SLAVE_RX_Callback, (uintptr_t)my_usart_obj);
+    }
 
     vTaskDelay(pdMS_TO_TICKS(10)); // Delay to allow other tasks to initialize
 
@@ -254,7 +298,7 @@ void APP_Tasks(void)
 
         while (true)
         {
-            printf("Transaction %c\n",count);
+            printf("Transaction %c\n", count);
             for (int slave_index = DRV_USART_INDEX_SLAVE0; slave_index < DRV_USART_INDEX_SLAVE0 + NUMBER_OF_SLAVES; slave_index++)
             {
                 // message from host to slaves
@@ -310,13 +354,13 @@ void APP_Tasks(void)
             printf("M->%d\n", i);
             p_usart_obj->tx_buffer.to_addr = i;
 //            USART_TE_Set(p_usart_obj->index);
-            if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, BS_USART_BUFFER_SIZE) != true)
+//            if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, BS_USART_BUFFER_SIZE) != true)
             {
                 printf("M-> error\n");
                 while (true)
                     ;
             }
-            xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_TX(p_usart_obj->index), &ulNotificationValue, 100);
+            //xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_TX(p_usart_obj->index), &ulNotificationValue, 100);
             if (ulNotificationValue == 0)
             {
                 printf("M->timout\n");
@@ -324,14 +368,14 @@ void APP_Tasks(void)
                     ;
             }
 
-            while ((p_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == 0);
+//            while ((p_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == 0);
 
             // receive from slave
-            if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_rx, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, &p_usart_obj->rx_buffer, BS_USART_BUFFER_SIZE) != true)
+            // if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_rx, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, &p_usart_obj->rx_buffer, BS_USART_BUFFER_SIZE) != true)
             {
                 printf("M-> error\n");
             }
-            xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 1000);
+            //xTaskNotifyWait(0, USART_SIGNAL_COMPLETE_RX(p_usart_obj->index), &ulNotificationValue, 1000);
             if (ulNotificationValue == 0)
             {
                 printf("M<-timout\n");
