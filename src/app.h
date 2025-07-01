@@ -109,9 +109,9 @@ typedef enum
 #define SLAVE0_ADDRESS  0x1
 #define SLAVE1_ADDRESS  0x2
 
-#define MASTER_DATA "Master\x55"//len must be same for now
-#define SLAVE0_DATA "Slave0\x55"//len must be same for now
-#define SLAVE1_DATA "Slave1\x55"//len must be same for now
+#define MASTER_DATA "Master\0"
+#define SLAVE0_DATA "Slave0\0"
+#define SLAVE1_DATA "Slave1\0"
 
 #define USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER)) // todo;remove
 

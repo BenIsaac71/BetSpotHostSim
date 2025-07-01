@@ -2,6 +2,7 @@
 #include "sys_tasks.h"
 #include "slave.h"
 
+#define FAKE_CRC "\xFF\x00\x00\xFF"
 // *****************************************************************************
 MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
 {
@@ -11,21 +12,21 @@ MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
         .address = MASTER_ADDRESS,
         .dmac_channel_tx = USART_DMA_CHANNEL_MASTER_TX,
         .dmac_channel_rx = USART_DMA_CHANNEL_MASTER_RX,
-        .tx_buffer = {.to_addr = GLOBAL_ADDRESS, .data_len = sizeof(MASTER_DATA),  .from_addr = MASTER_ADDRESS, .data = MASTER_DATA},
+        .tx_buffer = {.to_addr = GLOBAL_ADDRESS, .data_len = sizeof(MASTER_DATA)-1,  .from_addr = MASTER_ADDRESS, .data = MASTER_DATA FAKE_CRC}
     },
     [DRV_USART_INDEX_SLAVE0] = {
         .index = DRV_USART_INDEX_SLAVE0,
         .address = DRV_USART_INDEX_SLAVE0,
         .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE0_RX,
         .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE0_TX,
-        .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE0_DATA), .from_addr = DRV_USART_INDEX_SLAVE0, .data = SLAVE0_DATA}
+        .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE0_DATA)-1, .from_addr = DRV_USART_INDEX_SLAVE0, .data = SLAVE0_DATA FAKE_CRC}
     },
     [DRV_USART_INDEX_SLAVE1] = {
         .index = DRV_USART_INDEX_SLAVE1,
         .address = DRV_USART_INDEX_SLAVE1,
         .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE1_RX,
         .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE1_TX,
-        .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE1_DATA), .from_addr = DRV_USART_INDEX_SLAVE1, .data = SLAVE1_DATA}
+        .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE1_DATA)-1, .from_addr = DRV_USART_INDEX_SLAVE1, .data = SLAVE1_DATA FAKE_CRC}
     }
 };
 
@@ -252,21 +253,11 @@ bool process_response(MY_USART_OBJ *p_usart_obj)
     return false;
 }
 
-
-
-
-BS_MESSAGE_BUFFER tx_buffer = {.to_addr = GLOBAL_ADDRESS, .from_addr = MASTER_ADDRESS, .data_len = sizeof(uint32_t), .op = 0x01};
-BS_MESSAGE_BUFFER rx_buffer;
-
-
-
-
 void APP_Tasks(void)
 {
     MY_USART_OBJ *p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
     uint32_t ulNotificationValue;
 
-    USART_TE_Set(p_usart_obj->index);//Driver needs a to warm up on startup
     // Initialize the USART objects bsc usart object
     usart_objs[DRV_USART_INDEX_MASTER].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_MASTER);
     usart_objs[DRV_USART_INDEX_SLAVE0].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_SLAVE0);
@@ -275,6 +266,9 @@ void APP_Tasks(void)
 
     vTaskDelay(pdMS_TO_TICKS(10)); // Delay to allow other tasks to initialize
 
+    char count = usart_objs->tx_buffer.data[0];
+
+
     /* Check the application's current state. */
     switch (appData.state)
     {
@@ -282,41 +276,27 @@ void APP_Tasks(void)
     case APP_STATE_INIT:
         while (true)
         {
+
             //master to slave message
             p_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
-            BSC_USART_Read(p_usart_obj->bsc_usart_obj, &rx_buffer, sizeof(rx_buffer));
+            BSC_USART_Read(p_usart_obj->bsc_usart_obj, &p_usart_obj->rx_buffer, sizeof(p_usart_obj->rx_buffer));
 
             p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
+            p_usart_obj->tx_buffer.data[0] = count;
+
             USART_TE_Set(p_usart_obj->index); // Driver needs a to warm up on startup
-            BSC_USART_Write(p_usart_obj->bsc_usart_obj, &tx_buffer, tx_buffer.data_len + BS_MESSAGE_ADDITIONAL_SIZE);
+            BSC_USART_Write(p_usart_obj->bsc_usart_obj, &p_usart_obj->tx_buffer, p_usart_obj->tx_buffer.data_len + BS_MESSAGE_ADDITIONAL_SIZE);
             while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for TX to complete
             USART_TE_Clear(p_usart_obj->index); // Driver needs a to warm up on startup
 
+            p_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
             while (BSC_USART_ReadIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for RX to complete
+            printf("RX: %d<-%d:%s\n", p_usart_obj->rx_buffer.to_addr, p_usart_obj->rx_buffer.from_addr, (char *)p_usart_obj->rx_buffer.data);
 
-            printf("RX: %d<-%d:0x%08X\n", rx_buffer.to_addr, rx_buffer.from_addr, *(unsigned int *)rx_buffer.data);
-            (*(unsigned int *)tx_buffer.data)++; // Increment the data for the next transmission
-
+            count = (count < 'Z') ? (count + 1) : 'A'; // Increment count, wrap around if it exceeds 'z'
             LED_GREEN_Toggle();
+            vTaskDelay(pdMS_TO_TICKS(1000));
         }
-
-
-        while (true)
-        {
-            for (int i = 0; i < DRV_USART_INDEX_MAX; i++)
-            {
-                p_usart_obj = &usart_objs[i];
-
-                USART_TE_Set(p_usart_obj->index); // Driver needs a to warm up on startup
-                BSC_USART_Write(p_usart_obj->bsc_usart_obj, &tx_buffer, sizeof(tx_buffer));
-                while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for TX to complete
-                USART_TE_Clear(p_usart_obj->index); // Driver needs a to warm up on startup
-                vTaskDelay(1);
-            }
-            vTaskDelay(2);
-        }
-
-
 
         while (true)
         {
