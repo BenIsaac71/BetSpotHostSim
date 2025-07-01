@@ -66,7 +66,7 @@ extern "C" {
 // Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
-BSC_USART_OBJECT *BSC_USART_Initialize( int usart_number );
+BSC_USART_OBJECT *BSC_USART_Initialize( int usart_number, uint8_t address );
 
 bool BSC_USART_SerialSetup( BSC_USART_OBJECT *bsc_usart_obj, USART_SERIAL_SETUP *serialSetup, uint32_t clkFrequency );
 
@@ -107,6 +107,8 @@ void BSC_USART_ReadCallbackRegister( BSC_USART_OBJECT *bsc_usart_obj, SERCOM_USA
 USART_ERROR BSC_USART_ErrorGet( BSC_USART_OBJECT *bsc_usart_obj );
 
 uint32_t BSC_USART_FrequencyGet( BSC_USART_OBJECT *bsc_usart_obj);
+
+void BSC_USART_SetAddress(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address);
 
 //dummy for initialization for harmony framework
 #define SERCOM0_USART_Initialize()

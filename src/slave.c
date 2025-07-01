@@ -190,22 +190,22 @@ void vSlaveTask(void *pvParameters)
             printf("S%d<-A%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
             if (msg->from_addr == MASTER_ADDRESS)
             {
-                if (msg->to_addr == p_usart_obj->address)
-                {
-                    printf(" ME\n");
-                    slaveData->state = SLAVE_STATE_TRANSMITTING_RESPONSE;
-                    vTaskDelay(5); // Small delay to allow processing
-                }
-                else if (msg->to_addr == GLOBAL_ADDRESS)
-                {
-                    printf(" G\n");
-                    //vTaskDelay(pdMS_TO_TICKS(rand() % 256)); // Random delay, some where at start initialize the seed with the serial number
-                    slaveData->state = SLAVE_STATE_TRANSMITTING_RESPONSE;
-                }
-                else
-                {
-                    printf(" !4me\n");
-                }
+                // if (msg->to_addr == p_usart_obj->address)
+                // {
+                //     printf(" ME\n");
+                //     slaveData->state = SLAVE_STATE_TRANSMITTING_RESPONSE;
+                //     vTaskDelay(5); // Small delay to allow processing
+                // }
+                // else if (msg->to_addr == GLOBAL_ADDRESS)
+                // {
+                //     printf(" G\n");
+                //     //vTaskDelay(pdMS_TO_TICKS(rand() % 256)); // Random delay, some where at start initialize the seed with the serial number
+                //     slaveData->state = SLAVE_STATE_TRANSMITTING_RESPONSE;
+                // }
+                // else
+                // {
+                //     printf(" !4me\n");
+                // }
             }
             break;
         }

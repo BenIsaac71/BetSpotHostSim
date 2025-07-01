@@ -33,7 +33,8 @@
             "xtr1common": "c",
             "tuple": "c",
             "utility": "c",
-            "xstring": "c"
+            "xstring": "c",
+            "xmemory": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

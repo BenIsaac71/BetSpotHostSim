@@ -265,7 +265,7 @@ typedef struct
 {
     BSC_USART_SERCOM_ID                 bsc_usart_id;
 
-    uint8_t                             bsc_address;    
+    uint8_t                             address;    
 
     sercom_registers_t*                 sercom_regs;
     

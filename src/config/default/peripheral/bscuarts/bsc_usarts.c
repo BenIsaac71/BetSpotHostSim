@@ -103,7 +103,7 @@ void static BSC_USART_ErrorClear(BSC_USART_OBJECT *bsc_usart_obj)
     (void)u8dummyData;
 }
 
-BSC_USART_OBJECT *BSC_USART_Initialize(int usart_number)
+BSC_USART_OBJECT *BSC_USART_Initialize(int usart_number, uint8_t address)
 {
     /* Check if the usart index is valid */
     if (usart_number < 0 || usart_number >= 6)
@@ -153,6 +153,7 @@ BSC_USART_OBJECT *BSC_USART_Initialize(int usart_number)
     }
 
     /* Initialize instance object */
+    bsc_usart_obj->address = address;
     bsc_usart_obj->rxBuffer = NULL;
     bsc_usart_obj->rxSize = 0;
     bsc_usart_obj->rxProcessedSize = 0;
@@ -512,9 +513,9 @@ void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc
             temp = (uint16_t)bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
 
             size_t rxProcessedSize = bsc_usart_obj->rxProcessedSize;
-            if(temp & 0x0100U)
+            if (temp & 0x0100U)
             {
-                if(rxProcessedSize > 0)
+                if (rxProcessedSize > 0)
                 {
                     printf("a new packet has started, but the previous packet is not yet processed the rxsize bytes.\n");
                 }
@@ -522,25 +523,23 @@ void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc
                 /* 9th bit is set, so it is a start of packet */
                 rxProcessedSize = 0;
                 bsc_usart_obj->rxProcessedSize = 0;
-               
-            }
-            temp &= 0xFF;   
 
-            //address byte
-            if(rxProcessedSize == 0) 
+            }
+            temp &= 0xFF;
+
+            if (rxProcessedSize == 0)
             {
-                if((temp != bsc_usart_obj->bsc_address) || (temp != GLOBAL_ADDRESS))
+                //address byte
+                if ((temp != GLOBAL_ADDRESS) && (bsc_usart_obj->address != temp))
                 {
+                    printf("%d, %d\n", bsc_usart_obj->address, temp);
                     return;
                 }
             }
-            else 
+            else if (rxProcessedSize == 1)
             {
-                // length byte
-                if(rxProcessedSize == 1)
-                {
-                    bsc_usart_obj->rxSize = temp + BS_MESSAGE_ADDITIONAL_SIZE; 
-                }
+                //length byte
+                bsc_usart_obj->rxSize = temp + BS_MESSAGE_ADDITIONAL_SIZE;
             }
             ((uint8_t *)bsc_usart_obj->rxBuffer)[rxProcessedSize] = (uint8_t)(temp);
 
@@ -632,6 +631,11 @@ void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usar
             BSC_USART_ISR_RX_Handler(bsc_usart_obj);
         }
     }
+}
+
+void BSC_USART_SetAddress(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address)
+{
+    bsc_usart_obj->address = address;
 }
 
 

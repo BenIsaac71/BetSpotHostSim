@@ -9,24 +9,21 @@ MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
     [DRV_USART_INDEX_MASTER] =
     {
         .index = DRV_USART_INDEX_MASTER,
-        .address = MASTER_ADDRESS,
         .dmac_channel_tx = USART_DMA_CHANNEL_MASTER_TX,
         .dmac_channel_rx = USART_DMA_CHANNEL_MASTER_RX,
-        .tx_buffer = {.to_addr = GLOBAL_ADDRESS, .data_len = sizeof(MASTER_DATA)-1,  .from_addr = MASTER_ADDRESS, .data = MASTER_DATA FAKE_CRC}
+        .tx_buffer = {.to_addr = GLOBAL_ADDRESS, .data_len = sizeof(MASTER_DATA) - 1,  .from_addr = MASTER_ADDRESS, .data = MASTER_DATA FAKE_CRC}
     },
     [DRV_USART_INDEX_SLAVE0] = {
         .index = DRV_USART_INDEX_SLAVE0,
-        .address = DRV_USART_INDEX_SLAVE0,
         .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE0_RX,
         .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE0_TX,
-        .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE0_DATA)-1, .from_addr = DRV_USART_INDEX_SLAVE0, .data = SLAVE0_DATA FAKE_CRC}
+        .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE0_DATA) - 1, .from_addr = SLAVE0_ADDRESS, .data = SLAVE0_DATA FAKE_CRC}
     },
     [DRV_USART_INDEX_SLAVE1] = {
         .index = DRV_USART_INDEX_SLAVE1,
-        .address = DRV_USART_INDEX_SLAVE1,
         .dmac_channel_rx = USART_DMA_CHANNEL_SLAVE1_RX,
         .dmac_channel_tx = USART_DMA_CHANNEL_SLAVE1_TX,
-        .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE1_DATA)-1, .from_addr = DRV_USART_INDEX_SLAVE1, .data = SLAVE1_DATA FAKE_CRC}
+        .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE1_DATA) - 1, .from_addr = SLAVE1_ADDRESS, .data = SLAVE1_DATA FAKE_CRC}
     }
 };
 
@@ -112,7 +109,7 @@ void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
     }
 
     //signal task if its for our addres or global address
-    if ((p_usart_obj->rx_buffer.to_addr == p_usart_obj->address) || (p_usart_obj->rx_buffer.to_addr == GLOBAL_ADDRESS))
+//    if ((p_usart_obj->rx_buffer.to_addr == p_usart_obj->address) || (p_usart_obj->rx_buffer.to_addr == GLOBAL_ADDRESS))
     {
         xTaskNotifyFromISR(p_usart_obj->task_handle, ulValue, eSetBits, &xHigherPriorityTaskWoken);
         if (xHigherPriorityTaskWoken == pdTRUE)
@@ -220,15 +217,15 @@ bool process_message(MY_USART_OBJ *p_usart_obj)
         printf("%s: %d<-A%d[%s]\n", p_usart_obj->tx_buffer.data, msg->to_addr, msg->from_addr, msg->data);
         if (msg->from_addr == MASTER_ADDRESS)
         {
-            if (msg->to_addr == p_usart_obj->address)
-            {
-                printf(" ME\n");
-                return true;
-            }
-            else if (msg->to_addr == GLOBAL_ADDRESS)
-            {
-                printf(" G\n");
-            }
+            // if (msg->to_addr == p_usart_obj->address)
+            // {
+            //     printf(" ME\n");
+            //     return true;
+            // }
+            // else if (msg->to_addr == GLOBAL_ADDRESS)
+            // {
+            //     printf(" G\n");
+            // }
         }
         else
         {
@@ -253,20 +250,45 @@ bool process_response(MY_USART_OBJ *p_usart_obj)
     return false;
 }
 
+void begin_read(MY_USART_OBJ *p_usart_obj)
+{
+    // Start the read operation
+    BSC_USART_Read(p_usart_obj->bsc_usart_obj, &p_usart_obj->rx_buffer, sizeof(p_usart_obj->rx_buffer));
+}
+
+void block_write(MY_USART_OBJ *p_usart_obj)
+{
+    USART_TE_Set(p_usart_obj->index);
+
+    BSC_USART_Write(p_usart_obj->bsc_usart_obj, &p_usart_obj->tx_buffer, p_usart_obj->tx_buffer.data_len + BS_MESSAGE_ADDITIONAL_SIZE);
+    while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for TX to complete
+
+    USART_TE_Clear(p_usart_obj->index);
+}
+
+void block_rx_ready(MY_USART_OBJ *p_usart_obj)
+{
+    // Wait for RX to complete
+    while (BSC_USART_ReadIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for RX to complete
+    printf("%d<-%d:%s\n", p_usart_obj->rx_buffer.to_addr, p_usart_obj->rx_buffer.from_addr, (char *)p_usart_obj->rx_buffer.data);
+}
+
+
 void APP_Tasks(void)
 {
     MY_USART_OBJ *p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
     uint32_t ulNotificationValue;
 
     // Initialize the USART objects bsc usart object
-    usart_objs[DRV_USART_INDEX_MASTER].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_MASTER);
-    usart_objs[DRV_USART_INDEX_SLAVE0].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_SLAVE0);
-//    usart_objs[DRV_USART_INDEX_SLAVE1].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_SLAVE1);
+    usart_objs[DRV_USART_INDEX_MASTER].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_MASTER, MASTER_ADDRESS);
+
+    usart_objs[DRV_USART_INDEX_SLAVE0].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_SLAVE0, SLAVE0_ADDRESS);
+    usart_objs[DRV_USART_INDEX_SLAVE1].bsc_usart_obj = BSC_USART_Initialize(DRV_BSC_USART_SLAVE1, SLAVE1_ADDRESS);
 
 
     vTaskDelay(pdMS_TO_TICKS(10)); // Delay to allow other tasks to initialize
 
-    char count = usart_objs->tx_buffer.data[0];
+    char count = 'A';
 
 
     /* Check the application's current state. */
@@ -274,28 +296,32 @@ void APP_Tasks(void)
     {
     /* Application's initial state. */
     case APP_STATE_INIT:
+
         while (true)
         {
+            printf("Transaction %c\n",count);
+            for (int slave_index = DRV_USART_INDEX_SLAVE0; slave_index < DRV_USART_INDEX_SLAVE0 + NUMBER_OF_SLAVES; slave_index++)
+            {
+                // message from host to slaves
+                begin_read(&usart_objs[slave_index]);
 
-            //master to slave message
-            p_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
-            BSC_USART_Read(p_usart_obj->bsc_usart_obj, &p_usart_obj->rx_buffer, sizeof(p_usart_obj->rx_buffer));
+                usart_objs[DRV_USART_INDEX_MASTER].tx_buffer.data[0] = count;
+                usart_objs[DRV_USART_INDEX_MASTER].tx_buffer.to_addr = slave_index;
+                block_write(&usart_objs[DRV_USART_INDEX_MASTER]);
 
-            p_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
-            p_usart_obj->tx_buffer.data[0] = count;
+                block_rx_ready(&usart_objs[slave_index]);
 
-            USART_TE_Set(p_usart_obj->index); // Driver needs a to warm up on startup
-            BSC_USART_Write(p_usart_obj->bsc_usart_obj, &p_usart_obj->tx_buffer, p_usart_obj->tx_buffer.data_len + BS_MESSAGE_ADDITIONAL_SIZE);
-            while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for TX to complete
-            USART_TE_Clear(p_usart_obj->index); // Driver needs a to warm up on startup
+                // response from slave to host
+                begin_read(&usart_objs[DRV_USART_INDEX_MASTER]);
 
-            p_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
-            while (BSC_USART_ReadIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for RX to complete
-            printf("RX: %d<-%d:%s\n", p_usart_obj->rx_buffer.to_addr, p_usart_obj->rx_buffer.from_addr, (char *)p_usart_obj->rx_buffer.data);
+                usart_objs[slave_index].tx_buffer.data[0] = count;
+                block_write(&usart_objs[slave_index]);
 
-            count = (count < 'Z') ? (count + 1) : 'A'; // Increment count, wrap around if it exceeds 'z'
+                block_rx_ready(&usart_objs[DRV_USART_INDEX_MASTER]);
+            }
+            count = (count < 'Z') ? (count + 1) : 'A';
             LED_GREEN_Toggle();
-            vTaskDelay(pdMS_TO_TICKS(1000));
+            vTaskDelay(pdMS_TO_TICKS(2000));
         }
 
         while (true)

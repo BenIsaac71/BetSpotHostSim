@@ -109,9 +109,9 @@ typedef enum
 #define SLAVE0_ADDRESS  0x1
 #define SLAVE1_ADDRESS  0x2
 
-#define MASTER_DATA "Master\0"
-#define SLAVE0_DATA "Slave0\0"
-#define SLAVE1_DATA "Slave1\0"
+#define MASTER_DATA " -Master\0"
+#define SLAVE0_DATA " -Slave0\0"
+#define SLAVE1_DATA " -Slave1\0"
 
 #define USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER)) // todo;remove
 
@@ -138,7 +138,6 @@ typedef struct
 {
     DRV_USART_INDEX index;
     BSC_USART_OBJECT* bsc_usart_obj; // pointer to the BSC USART object
-    uint8_t address; // address of this USART, 0xF for master, 0-3 for slaves
     sercom_registers_t *sercom_regs;
     USART_DMAC_CHANNELS dmac_channel_tx;
     USART_DMAC_CHANNELS dmac_channel_rx;
