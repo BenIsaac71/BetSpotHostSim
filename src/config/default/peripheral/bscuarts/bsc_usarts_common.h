@@ -246,6 +246,7 @@ typedef struct
 */
 
 typedef void (*SERCOM_USART_CALLBACK)( uintptr_t context );
+typedef void (*TE_PIN_FUNCTION)(void);
 
 // *****************************************************************************
 /* BSC USART Object
@@ -265,7 +266,11 @@ typedef struct
 {
     BSC_USART_SERCOM_ID                 bsc_usart_id;
 
-    uint8_t                             address;    
+    TE_PIN_FUNCTION                     te_set;
+
+    TE_PIN_FUNCTION                     te_clr;
+
+    uint8_t                             address;
 
     sercom_registers_t*                 sercom_regs;
     

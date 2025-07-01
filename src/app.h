@@ -87,7 +87,23 @@ typedef enum
 #define DRV_BSC_USART_SLAVE0 BSC_USART_SERCOM5
 #define DRV_BSC_USART_SLAVE1 BSC_USART_SERCOM4
 
+#define SERCOM0_TE_Set 
+#define SERCOM0_TE_Clear
 
+#define SERCOM1_TE_Set MASTER_TE_Set();
+#define SERCOM1_TE_Clear MASTER_TE_Clear();
+
+#define SERCOM2_TE_Set
+#define SERCOM2_TE_Clear
+
+#define SERCOM3_TE_Set
+#define SERCOM3_TE_Clear
+
+#define SERCOM4_TE_Set SLAVE1_TE_Set();
+#define SERCOM4_TE_Clear SLAVE1_TE_Clear();
+
+#define SERCOM5_TE_Set SLAVE0_TE_Set();
+#define SERCOM5_TE_Clear SLAVE0_TE_Clear();
 
 #define NUMBER_OF_SLAVES 2
 
@@ -256,7 +272,6 @@ void APP_Tasks( void );
 void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
 void USART_TX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
 extern MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX];
-void USART_TE_Set(DRV_USART_INDEX index);
 
 // *****************************************************************************
 // *****************************************************************************

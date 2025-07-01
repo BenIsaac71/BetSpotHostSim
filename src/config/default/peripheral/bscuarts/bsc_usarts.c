@@ -35,43 +35,44 @@
 /* SERCOM1 USART baud value for 1000000 Hz baud rate */
 #define BSC_USART_INT_BAUD_VALUE            (48059UL)
 
+// *****************************************************************************
+// TE functions form SERCOM_USART#
+// *****************************************************************************
+#define BSC_USART_TE_funcs(id) \
+    void BSC_TE_SET_SERCOM##id(void) \
+    { \
+        SERCOM##id##_TE_Set \
+    } \
+    void BSC_TE_CLR_SERCOM##id(void) \
+    { \
+        SERCOM##id##_TE_Clear \
+    }
+
+BSC_USART_TE_funcs(0)
+BSC_USART_TE_funcs(1)
+BSC_USART_TE_funcs(2)
+BSC_USART_TE_funcs(3)
+BSC_USART_TE_funcs(4)
+BSC_USART_TE_funcs(5)
+
+
+// *****************************************************************************
+#define BSC_USART_OBJECT_INIT(id) \
+    { \
+        .bsc_usart_id = BSC_USART_SERCOM##id, \
+        .te_set = BSC_TE_SET_SERCOM##id, \
+        .te_clr = BSC_TE_CLR_SERCOM##id, \
+        .sercom_regs = SERCOM##id##_REGS, \
+        .peripheral_clk_freq = 60000000UL, \
+    }
 static BSC_USART_OBJECT bsc_usart_objs[BSC_USART_SERCOM_MAX] =
 {
-    [BSC_USART_SERCOM0] = {
-        .bsc_usart_id = BSC_USART_SERCOM0,
-        .sercom_regs = SERCOM0_REGS,
-        .peripheral_clk_freq = 60000000UL, // Assuming 60MHz clock
-    },
-    [BSC_USART_SERCOM1] =
-    {
-        .bsc_usart_id = BSC_USART_SERCOM1,
-        .sercom_regs = SERCOM1_REGS,
-        .peripheral_clk_freq = 60000000UL, // Assuming 60MHz clock
-    },
-    [BSC_USART_SERCOM2] =
-    {
-        .bsc_usart_id = BSC_USART_SERCOM2,
-        .sercom_regs = SERCOM2_REGS,
-        .peripheral_clk_freq = 60000000UL, // Assuming 60MHz clock
-    },
-    [BSC_USART_SERCOM3] =
-    {
-        .bsc_usart_id = BSC_USART_SERCOM3,
-        .sercom_regs = SERCOM3_REGS,
-        .peripheral_clk_freq = 60000000UL, // Assuming 60MHz clock
-    },
-    [BSC_USART_SERCOM4] =
-    {
-        .bsc_usart_id = BSC_USART_SERCOM4,
-        .sercom_regs = SERCOM4_REGS,
-        .peripheral_clk_freq = 60000000UL, // Assuming 60MHz clock
-    },
-    [BSC_USART_SERCOM5] =
-    {
-        .bsc_usart_id = BSC_USART_SERCOM5,
-        .sercom_regs = SERCOM5_REGS,
-        .peripheral_clk_freq = 60000000UL, // Assuming 60MHz clock
-    }
+    BSC_USART_OBJECT_INIT(0),
+    BSC_USART_OBJECT_INIT(1),
+    BSC_USART_OBJECT_INIT(2),
+    BSC_USART_OBJECT_INIT(3),
+    BSC_USART_OBJECT_INIT(4),
+    BSC_USART_OBJECT_INIT(5)
 };
 
 // *****************************************************************************
@@ -336,6 +337,8 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
         bsc_usart_obj->txSize = size;
         bsc_usart_obj->txBusyStatus = true;
 
+        bsc_usart_obj->te_set();
+        
         while (((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk) == false);
         /* 9th bit set  */
         bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)(buffer))[processedSize] | 0x100U;
@@ -589,17 +592,26 @@ void static __attribute__((used)) BSC_USART_ISR_TX_Handler(BSC_USART_OBJECT *bsc
 
         if (txProcessedSize >= bsc_usart_obj->txSize)
         {
-            bsc_usart_obj->txBusyStatus = false;
-            bsc_usart_obj->txSize = 0U;
             bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)SERCOM_USART_INT_INTENCLR_DRE_Msk;
 
-            if (bsc_usart_obj->txCallback != NULL)
-            {
-                uintptr_t txContext = bsc_usart_obj->txContext;
-                bsc_usart_obj->txCallback(txContext);
-            }
+            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
         }
-    }
+\    }
+}
+
+void static __attribute__((used)) BSC_USART_ISR_TXC_Handler(BSC_USART_OBJECT *bsc_usart_obj)
+{
+        bsc_usart_obj->te_clr();
+
+        bsc_usart_obj->txBusyStatus = false;
+        bsc_usart_obj->txSize = 0U;
+        bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
+
+        if (bsc_usart_obj->txCallback != NULL)
+        {
+            uintptr_t txContext = bsc_usart_obj->txContext;
+            bsc_usart_obj->txCallback(txContext);
+        }
 }
 
 void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usart_obj)
@@ -622,6 +634,15 @@ void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usar
         {
             BSC_USART_ISR_TX_Handler(bsc_usart_obj);
         }
+
+        testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == SERCOM_USART_INT_INTFLAG_TXC_Msk);
+        testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTFLAG_TXC_Msk) == SERCOM_USART_INT_INTFLAG_TXC_Msk) && testCondition;
+        /* Checks for transmit complete flag */
+        if (testCondition)
+        {
+            BSC_USART_ISR_TXC_Handler(bsc_usart_obj);
+        }
+
 
         testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_RXC_Msk) == SERCOM_USART_INT_INTFLAG_RXC_Msk);
         testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTENSET_RXC_Msk) == SERCOM_USART_INT_INTENSET_RXC_Msk) && testCondition;

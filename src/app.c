@@ -32,7 +32,6 @@ APP_DATA appData;
 // *****************************************************************************
 void USART_TX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
 void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
-void USART_TE_Clear(DRV_USART_INDEX index);
 void prepare_to_receive_message(MY_USART_OBJ *p_usart_obj);
 
 
@@ -122,46 +121,6 @@ void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle)
 
 // *****************************************************************************
 
-void USART_TE_Set(DRV_USART_INDEX index)
-{
-    switch (index)
-    {
-    case DRV_USART_INDEX_MASTER:
-        MASTER_TE_Set();
-        break;
-    case DRV_USART_INDEX_SLAVE0:
-        SLAVE0_TE_Set();
-        break;
-    case DRV_USART_INDEX_SLAVE1:
-        SLAVE1_TE_Set();
-        break;
-    default:
-        // Handle error or unsupported index
-        break;
-    }
-}
-
-// *****************************************************************************
-
-void USART_TE_Clear(DRV_USART_INDEX index)
-{
-    switch (index)
-    {
-    case DRV_USART_INDEX_MASTER:
-        MASTER_TE_Clear();
-        break;
-    case DRV_USART_INDEX_SLAVE0:
-        SLAVE0_TE_Clear();
-        break;
-    case DRV_USART_INDEX_SLAVE1:
-        SLAVE1_TE_Clear();
-        break;
-    default:
-        // Handle error or unsupported index
-        break;
-    }
-}
-
 // *****************************************************************************
 
 void prepare_to_receive_message(MY_USART_OBJ *p_usart_obj)
@@ -179,7 +138,7 @@ void transmit_message(MY_USART_OBJ *p_usart_obj, int to_addr)
     uint32_t ulNotificationValue;
     printf(" T%d", p_usart_obj->index);
 
-    USART_TE_Set(p_usart_obj->index);
+//    USART_TE_Set(p_usart_obj->index);
 
     //turn on the usart txc interrupt
     p_usart_obj->tx_buffer.to_addr = to_addr; // Set the destination address for the message
@@ -195,7 +154,7 @@ void transmit_message(MY_USART_OBJ *p_usart_obj, int to_addr)
     //until we fix the TXC interrupt, we just have to poll the TXC before continuing because of half duplex
     while ((p_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == 0);
 
-    USART_TE_Clear(p_usart_obj->index); // Clear the TE line after transmission
+//    USART_TE_Clear(p_usart_obj->index); // Clear the TE line after transmission
 
     printf("%dt\n", p_usart_obj->index);
 
@@ -258,12 +217,8 @@ void begin_read(MY_USART_OBJ *p_usart_obj)
 
 void block_write(MY_USART_OBJ *p_usart_obj)
 {
-    USART_TE_Set(p_usart_obj->index);
-
     BSC_USART_Write(p_usart_obj->bsc_usart_obj, &p_usart_obj->tx_buffer, p_usart_obj->tx_buffer.data_len + BS_MESSAGE_ADDITIONAL_SIZE);
     while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for TX to complete
-
-    USART_TE_Clear(p_usart_obj->index);
 }
 
 void block_rx_ready(MY_USART_OBJ *p_usart_obj)
@@ -354,7 +309,7 @@ void APP_Tasks(void)
             // transmit to slave
             printf("M->%d\n", i);
             p_usart_obj->tx_buffer.to_addr = i;
-            USART_TE_Set(p_usart_obj->index);
+//            USART_TE_Set(p_usart_obj->index);
             if (DMAC_ChannelTransfer(p_usart_obj->dmac_channel_tx, &p_usart_obj->tx_buffer, (uint8_t *)&p_usart_obj->sercom_regs->USART_INT.SERCOM_DATA, BS_USART_BUFFER_SIZE) != true)
             {
                 printf("M-> error\n");
