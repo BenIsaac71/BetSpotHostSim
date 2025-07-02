@@ -77,8 +77,6 @@ typedef enum
 #define SLAVE0_DATA " -Slave0\0"
 #define SLAVE1_DATA " -Slave1\0"
 
-#define USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER)) // todo;remove
-
 
 typedef enum
 {

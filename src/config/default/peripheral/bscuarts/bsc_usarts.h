@@ -68,7 +68,7 @@ extern "C" {
 // Section: Interface Routines
 // *****************************************************************************
 // *****************************************************************************
-BSC_USART_OBJECT *BSC_USART_Initialize( int usart_number, uint8_t address );
+BSC_USART_OBJECT *BSC_USART_Initialize( BSC_USART_SERCOM_ID sercom_id, uint8_t address );
 
 bool BSC_USART_SerialSetup( BSC_USART_OBJECT *bsc_usart_obj, USART_SERIAL_SETUP *serialSetup, uint32_t clkFrequency );
 

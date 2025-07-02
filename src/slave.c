@@ -59,7 +59,7 @@ void SLAVE_RX_Callback(uintptr_t context)
 {
     MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
 
-    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
+    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
     printf("SRXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
 
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
@@ -103,7 +103,7 @@ void SLAVE1_Initialize(void)
 // *****************************************************************************
 void SlaveTasks(SLAVE_DATA *slave_data, MY_USART_OBJ *my_usart_obj)
 {
-
+    char count = 'a';
     while (true)
     {
         /* Check the application's current state. */
@@ -111,12 +111,20 @@ void SlaveTasks(SLAVE_DATA *slave_data, MY_USART_OBJ *my_usart_obj)
         {
         /* Application's initial state. */
         case SLAVE_STATE_INIT:
-            printf("Slave %d Initialized\n", my_usart_obj->bsc_usart_obj->address);
-            slave_data->state = SLAVE_STATE_WAITING_FOR_MESSAGE;
+            while (true)
+            {
+                // wait for a message from the master
+                begin_read(my_usart_obj);
+                block_rx_ready(my_usart_obj);
+                vTaskDelay(pdMS_TO_TICKS(100)); 
+                // send a response back to the master
+                my_usart_obj->tx_buffer.data[0] = count;
+                block_write(my_usart_obj);
+                count = (count < 'z') ? (count + 1) : 'a';
+            }
+
             break;
         case SLAVE_STATE_WAITING_FOR_MESSAGE:
-            printf("Slave %d Waiting for Message\n", my_usart_obj->bsc_usart_obj->address);
-            slave_data->state = SLAVE_STATE_WAITING_FOR_MESSAGE;
             break;
         case SLAVE_STATE_TRANSMITTING_RESPONSE:
             break;
@@ -130,7 +138,9 @@ void SlaveTasks(SLAVE_DATA *slave_data, MY_USART_OBJ *my_usart_obj)
 SLAVE_DATA slave_data[NUMBER_OF_SLAVES] =
 {
     {SLAVE_STATE_INIT}, // Slave 0 data
+#if NUMBER_OF_SLAVES > 1
     {SLAVE_STATE_INIT}  // Slave 1 data;
+#endif
 };
 
 // *****************************************************************************

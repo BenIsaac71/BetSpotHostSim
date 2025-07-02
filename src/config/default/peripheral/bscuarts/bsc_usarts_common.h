@@ -63,6 +63,9 @@
     /* Error status when overrun error has occurred */
 #define USART_ERROR_OVERRUN SERCOM_USART_INT_STATUS_BUFOVF_Msk
 
+    /* Error status when receives 9th bit set before packet end */
+#define USART_ERROR_PACKET_FRAMING 0x100
+
 
 // *****************************************************************************
 // *****************************************************************************
@@ -308,17 +311,20 @@ typedef enum
 
 #define MASTER_ADDRESS 0xFF
 #define GLOBAL_ADDRESS 0x00
+
+
+
+#define MAX_DATA_SIZE 0xFF
 typedef struct __packed
 {
     uint8_t to_addr;
     uint8_t data_len;
     uint8_t from_addr;
     uint8_t op;
-    uint8_t data[0xFF];
-    uint32_t crc;//run via dma peripheral as it is rxed. length is'nt part of dma so could include after dmac complete and validate rxed crc
+    uint8_t data[MAX_DATA_SIZE];
+    uint32_t crc;
 } BS_MESSAGE_BUFFER;
-#define BS_MESSAGE_ADDITIONAL_SIZE sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint8_t) + sizeof(uint32_t)
-#define BS_USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER))
+#define BS_MESSAGE_META_SIZE (sizeof(BS_MESSAGE_BUFFER) - MAX_DATA_SIZE)
 
 
 // *****************************************************************************

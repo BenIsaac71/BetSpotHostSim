@@ -32,6 +32,8 @@
 // // Section: Global Data
 // *****************************************************************************
 // *****************************************************************************
+/* SERCOM1 USART baud value for 100000 Hz baud rate */
+//#define BSC_USART_INT_BAUD_VALUE            (63788UL)
 /* SERCOM1 USART baud value for 1000000 Hz baud rate */
 #define BSC_USART_INT_BAUD_VALUE            (48059UL)
 
@@ -42,7 +44,7 @@
     void BSC_TE_SET_SERCOM##id(void) \
     { \
         SERCOM##id##_TE_Set \
-    } \
+} \
     void BSC_TE_CLR_SERCOM##id(void) \
     { \
         SERCOM##id##_TE_Clear \
@@ -68,8 +70,7 @@ BSC_USART_TE_funcs(5)
         .peripheral_clk_freq = 60000000UL, \
     }
 
-
-static BSC_USART_OBJECT bsc_usart_objs[BSC_USART_SERCOM_MAX] =
+    static BSC_USART_OBJECT bsc_usart_objs[BSC_USART_SERCOM_MAX] =
 {
     BSC_USART_OBJECT_INIT(0),
     BSC_USART_OBJECT_INIT(1),
@@ -81,7 +82,7 @@ static BSC_USART_OBJECT bsc_usart_objs[BSC_USART_SERCOM_MAX] =
 
 // *****************************************************************************
 // *****************************************************************************
-// Section: BSC_USART USART Interface Routines
+// Section: BSC_USART Interface Routines
 // *****************************************************************************
 // *****************************************************************************
 
@@ -108,15 +109,15 @@ void static BSC_USART_ErrorClear(BSC_USART_OBJECT *bsc_usart_obj)
     (void)u8dummyData;
 }
 
-BSC_USART_OBJECT *BSC_USART_Initialize(int usart_number, uint8_t address)
+BSC_USART_OBJECT *BSC_USART_Initialize(BSC_USART_SERCOM_ID sercom_id, uint8_t address)
 {
     /* Check if the usart index is valid */
-    if (usart_number < 0 || usart_number >= 6)
+    if (sercom_id >= BSC_USART_SERCOM_MAX)
     {
         return NULL; // Invalid index, do nothing
     }
 
-    BSC_USART_OBJECT *bsc_usart_obj = &bsc_usart_objs[usart_number];
+    BSC_USART_OBJECT *bsc_usart_obj = &bsc_usart_objs[sercom_id];
 
     /*
      * Configures USART Clock Mode
@@ -331,27 +332,44 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
     bool writeStatus      = false;
     uint32_t processedSize = 0U;
 
-    if ((buffer != NULL) && (size > 0U) && (bsc_usart_obj->txBusyStatus == false))
+    if (buffer != NULL)
     {
-        bsc_usart_obj->txBuffer = buffer;
-        bsc_usart_obj->txSize = size;
-        bsc_usart_obj->txBusyStatus = true;
+        if (bsc_usart_obj->txBusyStatus == false)
+        {
+            bsc_usart_obj->txBuffer = buffer;
+            bsc_usart_obj->txSize = size;
+            bsc_usart_obj->txBusyStatus = true;
 
-        bsc_usart_obj->te_set();
+            bsc_usart_obj->te_set();
 
-        while (((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk) == false);
-        /* 9th bit set  */
-        bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)(buffer))[processedSize] | 0x100U;
+            size_t txSize = bsc_usart_obj->txSize;
 
-        processedSize += 1U;
-        bsc_usart_obj->txProcessedSize = processedSize;
-        bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTFLAG_DRE_Msk;
+            /* Initiate the transfer by sending first byte */
+            while (((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk) &&
+                    (processedSize < txSize))
+            {
+                if (processedSize != 0)
+                {
+                    /* 8-bit mode */
+                    bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint16_t *)(buffer))[processedSize];
+                }
+                else
+                {
+                    /* 9-bit mode */
+                    bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)(buffer))[processedSize] | 0x100U;;
+                }
+                processedSize += 1U;
+            }
+            bsc_usart_obj->txProcessedSize = processedSize;
+            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTFLAG_DRE_Msk;
 
-        writeStatus = true;
+            writeStatus = true;
+        }
     }
 
     return writeStatus;
 }
+
 
 
 bool BSC_USART_WriteIsBusy(BSC_USART_OBJECT *bsc_usart_obj)
@@ -505,63 +523,71 @@ void static __attribute__((used)) BSC_USART_ISR_ERR_Handler(BSC_USART_OBJECT *bs
 
 void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc_usart_obj)
 {
-    uint16_t temp;
 
 
     if (bsc_usart_obj->rxBusyStatus == true)
     {
         if (bsc_usart_obj->rxProcessedSize < bsc_usart_obj->rxSize)
         {
-
-            temp = (uint16_t)bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
+            uint16_t temp = (uint16_t)bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
 
             size_t rxProcessedSize = bsc_usart_obj->rxProcessedSize;
-            if (temp & 0x0100U)
+            if (rxProcessedSize > 0)
             {
-                if (rxProcessedSize > 0)
+                if (bsc_usart_obj->rxProcessedSize == 1)
                 {
-                    printf("a new packet has started, but the previous packet is not yet processed the rxsize bytes.\n");
+                    //length byte
+                    bsc_usart_obj->rxSize = temp + BS_MESSAGE_META_SIZE;
                 }
+                ((uint8_t *)bsc_usart_obj->rxBuffer)[bsc_usart_obj->rxProcessedSize] = (uint8_t)temp;
+                /* Increment processed size */
+                rxProcessedSize++;
+                bsc_usart_obj->rxProcessedSize = rxProcessedSize;
 
-                /* 9th bit is set, so it is a start of packet */
-                rxProcessedSize = 0;
-                bsc_usart_obj->rxProcessedSize = 0;
-
-            }
-            temp &= 0xFF;
-
-            if (rxProcessedSize == 0)
-            {
-                //address byte
-                if ((temp != GLOBAL_ADDRESS) && (bsc_usart_obj->address != temp))
+                if (rxProcessedSize == bsc_usart_obj->rxSize)
                 {
-                    printf("%d, %d\n", bsc_usart_obj->address, temp);
-                    return;
-                }
-            }
-            else if (rxProcessedSize == 1)
-            {
-                //length byte
-                bsc_usart_obj->rxSize = temp + BS_MESSAGE_ADDITIONAL_SIZE;
-            }
-            ((uint8_t *)bsc_usart_obj->rxBuffer)[rxProcessedSize] = (uint8_t)(temp);
+                    bsc_usart_obj->rxBusyStatus = false;
+                    bsc_usart_obj->rxSize = 0U;
+                    bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)(SERCOM_USART_INT_INTENCLR_RXC_Msk | SERCOM_USART_INT_INTENCLR_ERROR_Msk);
 
-            /* Increment processed size */
-            rxProcessedSize++;
-            bsc_usart_obj->rxProcessedSize = rxProcessedSize;
-
-            if (rxProcessedSize == bsc_usart_obj->rxSize)
-            {
-                bsc_usart_obj->rxBusyStatus = false;
-                bsc_usart_obj->rxSize = 0U;
-                bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)(SERCOM_USART_INT_INTENCLR_RXC_Msk | SERCOM_USART_INT_INTENCLR_ERROR_Msk);
-
-                if (bsc_usart_obj->rxCallback != NULL)
-                {
-                    bsc_usart_obj->rxCallback(bsc_usart_obj->rxContext);
+                    if (bsc_usart_obj->rxCallback != NULL)
+                    {
+                        bsc_usart_obj->rxCallback(bsc_usart_obj->rxContext);
+                    }
                 }
             }
+            else if (temp & 0x0100U)
+            {
+                // 9th bit start of packet with address byte
+                if (rxProcessedSize == 0)
+                {
+                    temp &= 0x00FFU; // clear 9th bit
+                    if ((temp == GLOBAL_ADDRESS) || (bsc_usart_obj->address == temp))
+                    {
+                        ((uint8_t *)bsc_usart_obj->rxBuffer)[rxProcessedSize] = temp;
+                        bsc_usart_obj->rxProcessedSize = 1;
+                   }
+                }
+                else
+                {
+                    /* Save the error to be reported later */
+                    bsc_usart_obj->errorStatus |= USART_ERROR_PACKET_FRAMING;
 
+                    /* Clear the error flags and flush out the error bytes */
+                    BSC_USART_ErrorClear(bsc_usart_obj);
+
+                    /* Disable error and receive interrupt to abort on-going transfer */
+                    bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)(SERCOM_USART_INT_INTENCLR_ERROR_Msk | SERCOM_USART_INT_INTENCLR_RXC_Msk);
+
+                    /* Clear the RX busy flag */
+                    bsc_usart_obj->rxBusyStatus = false;
+
+                    if (bsc_usart_obj->rxCallback != NULL)
+                    {
+                        bsc_usart_obj->rxCallback(bsc_usart_obj->rxContext);
+                    }
+                }
+            }
         }
     }
 }
@@ -658,12 +684,6 @@ void BSC_USART_SetAddress(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address)
 {
     bsc_usart_obj->address = address;
 }
-
-void BSC_USART_SetMode(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address)
-{
-    bsc_usart_obj->address = address;
-}
-
 
 void __attribute__((used)) SERCOM0_USART_InterruptHandler(void)
 {
