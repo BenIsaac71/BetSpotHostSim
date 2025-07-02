@@ -57,9 +57,9 @@
 #include "peripheral/nvic/plib_nvic.h"
 #include "peripheral/dmac/plib_dmac.h"
 #include "peripheral/cmcc/plib_cmcc.h"
+//#include "peripheral/sercom/usart/plib_sercom5_usart.h"
 #include "usb/usb_chapter_9.h"
 #include "usb/usb_device.h"
-//#include "peripheral/sercom/usart/plib_sercom5_usart.h"
 //#include "peripheral/sercom/usart/plib_sercom4_usart.h"
 #include "usb/usb_device_cdc.h"
 #include "usb/usb_cdc.h"
@@ -74,6 +74,7 @@
 #include "osal/osal.h"
 #include "system/debug/sys_debug.h"
 #include "app.h"
+#include "slave.h"
 #include "peripheral/bscuarts/bsc_usarts.h"
 
 

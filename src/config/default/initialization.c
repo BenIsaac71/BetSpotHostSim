@@ -292,6 +292,8 @@ void SYS_Initialize ( void* data )
 
     /* MISRAC 2012 deviation block end */
     APP_Initialize();
+    SLAVE0_Initialize();
+    SLAVE1_Initialize();
 
 
     NVIC_Initialize();

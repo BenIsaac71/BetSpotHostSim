@@ -1,60 +1,15 @@
-/*******************************************************************************
-  MPLAB Harmony Application Header File
-
-  Company:
-    Microchip Technology Inc.
-
-  File Name:
-    app.h
-
-  Summary:
-    This header file provides prototypes and definitions for the application.
-
-  Description:
-    This header file provides function prototypes and data type definitions for
-    the application.  Some of these are required by the system (such as the
-    "APP_Initialize" and "APP_Tasks" prototypes) and some of them are only used
-    internally by the application (such as the "APP_STATES" definition).  Both
-    are defined here for convenience.
-*******************************************************************************/
-
 #ifndef _APP_H
 #define _APP_H
 
 // *****************************************************************************
-// *****************************************************************************
-// Section: Included Files
-// *****************************************************************************
-// *****************************************************************************
-
 #include "definitions.h"
 #include "bsc_usarts.h"
 
-// DOM-IGNORE-BEGIN
 #ifdef __cplusplus  // Provide C++ Compatibility
-
 extern "C" {
-
 #endif
-// DOM-IGNORE-END
 
 // *****************************************************************************
-// *****************************************************************************
-// Section: Type Definitions
-// *****************************************************************************
-// *****************************************************************************
-
-// *****************************************************************************
-/* Application states
-
-  Summary:
-    Application states enumeration
-
-  Description:
-    This enumeration defines the valid application states.  These states
-    determine the behavior of the application at various times.
-*/
-
 typedef enum
 {
     /* Application's state machine's initial state. */
@@ -64,6 +19,7 @@ typedef enum
 
 } APP_STATES;
 
+// *****************************************************************************
 typedef enum
 {
     DRV_USART_INDEX_MASTER,
@@ -71,10 +27,12 @@ typedef enum
     DRV_USART_INDEX_SLAVE1,
     DRV_USART_INDEX_MAX
 } DRV_USART_INDEX;
+
+// *****************************************************************************
 #define NUMBER_OF_SLAVES 2
 
 #define DMAC_CHANNEL_NONE -1
-#define SERCOM0_TE_Set 
+#define SERCOM0_TE_Set
 #define SERCOM0_TE_Clear
 #define SERCOM0_DMAC_TX_CHANNEL -1
 #define SERCOM0_DMAC_RX_CHANNEL -1
@@ -107,8 +65,8 @@ typedef enum
 #define SERCOM5_DMAC_TX_CHANNEL DMAC_CHANNEL_1
 #define SERCOM5_DMAC_RX_CHANNEL DMAC_CHANNEL_4
 
-#define USART_SIGNAL_COMPLETE_TX (1 << 0)
-#define USART_SIGNAL_COMPLETE_RX (1 << 1)
+#define USART_SIGNAL_TX_COMPLETE (1 << 0)
+#define USART_SIGNAL_RX_COMPLETE (1 << 1)
 #define USART_SIGNAL_ERROR_FLAG  (1 << 3)
 
 
@@ -121,11 +79,6 @@ typedef enum
 
 #define USART_BUFFER_SIZE (sizeof(BS_MESSAGE_BUFFER)) // todo;remove
 
-typedef enum
-{
-    MY_USART_EVENT_PACKET_READY,
-    MY_USART_EVENT_PACKET_ERROR,
-} MY_USART_EVENT;
 
 typedef enum
 {
@@ -137,13 +90,11 @@ typedef enum
     MY_USART_PACKET_COMPLETE,            //DMA transfer complete
 } MY_USART_PACKET_STATE;
 
-typedef void (*MY_USART_OBJ_CALLBACK)(MY_USART_EVENT event, uintptr_t context );
-
 typedef struct
 
 {
     DRV_USART_INDEX index;
-    BSC_USART_OBJECT* bsc_usart_obj; // pointer to the BSC USART object
+    BSC_USART_OBJECT *bsc_usart_obj; // pointer to the BSC USART object
     BS_MESSAGE_BUFFER tx_buffer;
     BS_MESSAGE_BUFFER rx_buffer;
     TaskHandle_t task_handle;
@@ -154,18 +105,6 @@ typedef struct
 #define USART_1   (&usartObjs[1])
 
 // *****************************************************************************
-/* Application Data
-
-  Summary:
-    Holds application data
-
-  Description:
-    This structure holds the application's data.
-
-  Remarks:
-    Application strings and buffers are be defined outside this structure.
- */
-
 typedef struct
 {
     /* The application's current state */
@@ -178,103 +117,21 @@ typedef struct
 
 
 // *****************************************************************************
-// *****************************************************************************
-// Section: Application Callback Routines
-// *****************************************************************************
-// *****************************************************************************
-/* These routines are called by drivers when certain events occur.
-*/
+
+void begin_read(MY_USART_OBJ *p_usart_obj);
+void block_write(MY_USART_OBJ *p_usart_obj);
+void block_rx_ready(MY_USART_OBJ *p_usart_obj);
+
+void APP_Initialize(void);
+void APP_Tasks(void);
 
 // *****************************************************************************
-// *****************************************************************************
-// Section: Application Initialization and State Machine Functions
-// *****************************************************************************
-// *****************************************************************************
-
-/*******************************************************************************
-  Function:
-    void APP_Initialize ( void )
-
-  Summary:
-     MPLAB Harmony application initialization routine.
-
-  Description:
-    This function initializes the Harmony application.  It places the
-    application in its initial state and prepares it to run so that its
-    APP_Tasks function can be called.
-
-  Precondition:
-    All other system initialization routines should be called before calling
-    this routine (in "SYS_Initialize").
-
-  Parameters:
-    None.
-
-  Returns:
-    None.
-
-  Example:
-    <code>
-    APP_Initialize();
-    </code>
-
-  Remarks:
-    This routine must be called from the SYS_Initialize function.
-*/
-
-void APP_Initialize ( void );
-
-
-/*******************************************************************************
-  Function:
-    void APP_Tasks ( void )
-
-  Summary:
-    MPLAB Harmony Demo application tasks function
-
-  Description:
-    This routine is the Harmony Demo application's tasks function.  It
-    defines the application's state machine and core logic.
-
-  Precondition:
-    The system and application initialization ("SYS_Initialize") should be
-    called before calling this.
-
-  Parameters:
-    None.
-
-  Returns:
-    None.
-
-  Example:
-    <code>
-    APP_Tasks();
-    </code>
-
-  Remarks:
-    This routine must be called from SYS_Tasks() routine.
- */
-
-void APP_Tasks( void );
-void USART_RX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
-void USART_TX_DMA_Callback(DMAC_TRANSFER_EVENT event, uintptr_t contextHandle);
 extern MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX];
 
-// *****************************************************************************
-// *****************************************************************************
-// Section: RTOS "Tasks" Handles
-// *****************************************************************************
-// *****************************************************************************
 
-//DOM-IGNORE-BEGIN
 #ifdef __cplusplus
 }
 #endif
-//DOM-IGNORE-END
 
 #endif /* _APP_H */
-
-/*******************************************************************************
- End of File
- */
 

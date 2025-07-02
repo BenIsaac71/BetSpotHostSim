@@ -24,7 +24,9 @@
         "src/config/default/startup_xc32.c",
         "src/config/default/peripheral/sercom/usart/plib_sercom1_usart.c",
         "src/config/default/peripheral/sercom/usart/plib_sercom5_usart.c",
-        "src/config/default/peripheral/sercom/usart/plib_sercom4_usart.c"
+        "src/config/default/peripheral/sercom/usart/plib_sercom4_usart.c",
+        "src/slave0.c",
+        "src/slave1.c"
       ],
       "toolchain": "GCC",
       "compileConfig": {

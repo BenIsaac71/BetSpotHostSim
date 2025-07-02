@@ -34,7 +34,8 @@
             "tuple": "c",
             "utility": "c",
             "xstring": "c",
-            "xmemory": "c"
+            "xmemory": "c",
+            "algorithm": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,
