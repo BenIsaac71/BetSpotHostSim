@@ -73,9 +73,9 @@ typedef enum
 #define SLAVE0_ADDRESS  0x1
 #define SLAVE1_ADDRESS  0x2
 
-#define MASTER_DATA " -Master\0"
-#define SLAVE0_DATA " -Slave0\0"
-#define SLAVE1_DATA " -Slave1\0"
+#define MASTER_DATA "A-Master\0"
+#define SLAVE0_DATA "a-Slave0\0"
+#define SLAVE1_DATA "a-Slave1\0"
 
 
 typedef enum
@@ -95,7 +95,6 @@ typedef struct
     BSC_USART_OBJECT *bsc_usart_obj; // pointer to the BSC USART object
     BS_MESSAGE_BUFFER tx_buffer;
     BS_MESSAGE_BUFFER rx_buffer;
-    TaskHandle_t task_handle;
 } MY_USART_OBJ;
 
 
@@ -119,6 +118,9 @@ typedef struct
 void begin_read(MY_USART_OBJ *p_usart_obj);
 void block_write(MY_USART_OBJ *p_usart_obj);
 void block_rx_ready(MY_USART_OBJ *p_usart_obj);
+
+void TX_Callback(uintptr_t context);
+void RX_Callback(uintptr_t context);
 
 void APP_Initialize(void);
 void APP_Tasks(void);

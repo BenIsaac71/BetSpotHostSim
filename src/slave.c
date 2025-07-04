@@ -41,36 +41,6 @@ TaskHandle_t xSlave1TaskHandle;
 
 
 // *****************************************************************************
-void SLAVE_TX_Callback(uintptr_t context)
-{
-    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
-
-    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
-    printf("STXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
-
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xTaskNotifyFromISR(p_usart_obj->task_handle, USART_SIGNAL_TX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
-    if (xHigherPriorityTaskWoken == pdTRUE)
-    {
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-}
-void SLAVE_RX_Callback(uintptr_t context)
-{
-    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
-
-    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
-    printf("SRXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
-
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xTaskNotifyFromISR(p_usart_obj->task_handle, USART_SIGNAL_TX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
-    if (xHigherPriorityTaskWoken == pdTRUE)
-    {
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-}
-
-// *****************************************************************************
 void SLAVE0_Initialize(void)
 {
     xTaskCreate(SLAVE0_Tasks, "Slave0Task", 1024, NULL, tskIDLE_PRIORITY + 1, &xSlave0TaskHandle);
@@ -79,12 +49,8 @@ void SLAVE0_Initialize(void)
     BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM5, SLAVE0_ADDRESS);
 
     my_usart_obj->bsc_usart_obj = bsc_usart_obj;
-    my_usart_obj->task_handle = xSlave0TaskHandle;
-
-    BSC_USART_WriteCallbackRegister(bsc_usart_obj, SLAVE_TX_Callback, (uintptr_t)my_usart_obj);
-    BSC_USART_ReadCallbackRegister(bsc_usart_obj, SLAVE_RX_Callback, (uintptr_t)my_usart_obj);
-
 }
+
 void SLAVE1_Initialize(void)
 {
     xTaskCreate(SLAVE1_Tasks, "Slave1Task", 1024, NULL, tskIDLE_PRIORITY + 1, &xSlave1TaskHandle);
@@ -93,10 +59,6 @@ void SLAVE1_Initialize(void)
     BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM4, SLAVE1_ADDRESS);
 
     my_usart_obj->bsc_usart_obj = bsc_usart_obj;
-    my_usart_obj->task_handle = xSlave0TaskHandle;
-
-    BSC_USART_WriteCallbackRegister(bsc_usart_obj, SLAVE_TX_Callback, (uintptr_t)my_usart_obj);
-    BSC_USART_ReadCallbackRegister(bsc_usart_obj, SLAVE_RX_Callback, (uintptr_t)my_usart_obj);
 }
 
 
@@ -116,7 +78,7 @@ void SlaveTasks(SLAVE_DATA *slave_data, MY_USART_OBJ *my_usart_obj)
                 // wait for a message from the master
                 begin_read(my_usart_obj);
                 block_rx_ready(my_usart_obj);
-                vTaskDelay(pdMS_TO_TICKS(100)); 
+                vTaskDelay(pdMS_TO_TICKS(1)); 
                 // send a response back to the master
                 my_usart_obj->tx_buffer.data[0] = count;
                 block_write(my_usart_obj);
@@ -137,7 +99,9 @@ void SlaveTasks(SLAVE_DATA *slave_data, MY_USART_OBJ *my_usart_obj)
 
 SLAVE_DATA slave_data[NUMBER_OF_SLAVES] =
 {
+#if NUMBER_OF_SLAVES > 0
     {SLAVE_STATE_INIT}, // Slave 0 data
+#endif
 #if NUMBER_OF_SLAVES > 1
     {SLAVE_STATE_INIT}  // Slave 1 data;
 #endif

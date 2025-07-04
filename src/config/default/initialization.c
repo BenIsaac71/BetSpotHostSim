@@ -53,23 +53,6 @@
 // Section: Configuration Bits
 // ****************************************************************************
 // ****************************************************************************
-#ifdef __XC32
-#pragma config BOD33_DIS = SET
-#pragma config BOD33USERLEVEL = 0x1cU
-#pragma config BOD33_ACTION = RESET
-#pragma config BOD33_HYST = 0x2U
-#pragma config NVMCTRL_BOOTPROT = 0
-#pragma config NVMCTRL_SEESBLK = 0x0U
-#pragma config NVMCTRL_SEEPSZ = 0x0U
-#pragma config RAMECC_ECCDIS = SET
-#pragma config WDT_ENABLE = CLEAR
-#pragma config WDT_ALWAYSON = CLEAR
-#pragma config WDT_PER = CYC8192
-#pragma config WDT_WINDOW = CYC8192
-#pragma config WDT_EWOFFSET = CYC8192
-#pragma config WDT_WEN = CLEAR
-#pragma config NVMCTRL_REGION_LOCKS = 0xffffffffU
-#endif
 
 
 
@@ -292,7 +275,9 @@ void SYS_Initialize ( void* data )
 
     /* MISRAC 2012 deviation block end */
     APP_Initialize();
+#if NUMBER_OF_SLAVES > 0
     SLAVE0_Initialize();
+#endif
 #if NUMBER_OF_SLAVES > 1
     SLAVE1_Initialize();
 #endif

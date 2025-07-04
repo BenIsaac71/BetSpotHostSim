@@ -35,7 +35,9 @@
             "utility": "c",
             "xstring": "c",
             "xmemory": "c",
-            "algorithm": "c"
+            "algorithm": "c",
+            "array": "c",
+            "vector": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

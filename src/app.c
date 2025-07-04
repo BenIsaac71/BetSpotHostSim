@@ -34,12 +34,9 @@ void block_write(MY_USART_OBJ *p_usart_obj)
 {
     BSC_USART_Write(p_usart_obj->bsc_usart_obj, &p_usart_obj->tx_buffer, p_usart_obj->tx_buffer.data_len + BS_MESSAGE_META_SIZE);
     while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)); // Wait for TX to complete
-    USART_ERROR error = BSC_USART_ErrorGet(p_usart_obj->bsc_usart_obj); // Clear any errors
-    if (error != USART_ERROR_NONE)
-    {
-        printf("USART Error: %d\n", error);
-        // Handle error as needed
-    }
+
+    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
+    printf("TXC %d->%d[%s]\n", msg->from_addr, msg->to_addr, msg->data);
 }
 
 void block_rx_ready(MY_USART_OBJ *p_usart_obj)
@@ -49,39 +46,11 @@ void block_rx_ready(MY_USART_OBJ *p_usart_obj)
     USART_ERROR error = BSC_USART_ErrorGet(p_usart_obj->bsc_usart_obj); // Clear any errors
     if (error != USART_ERROR_NONE)
     {
-        printf("USART Error: %d\n", error);
+        printf("RD Error: %d\n", error);
         // Handle error as needed
     }
-}
-
-// *****************************************************************************
-void MASTER_TX_Callback(uintptr_t context)
-{
-    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
-
-    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
-    printf("MTXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
-
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xTaskNotifyFromISR(p_usart_obj->task_handle, USART_SIGNAL_TX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
-    if (xHigherPriorityTaskWoken == pdTRUE)
-    {
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
-}
-void MASTER_RX_Callback(uintptr_t context)
-{
-    MY_USART_OBJ *p_usart_obj = (MY_USART_OBJ *)context;
-
     BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
-    printf("MRXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
-
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    xTaskNotifyFromISR(p_usart_obj->task_handle, USART_SIGNAL_RX_COMPLETE, eSetBits, &xHigherPriorityTaskWoken);
-    if (xHigherPriorityTaskWoken == pdTRUE)
-    {
-        portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-    }
+    printf("RXC %d<-%d[%s]\n", msg->to_addr, msg->from_addr, msg->data);
 }
 
 // *****************************************************************************
@@ -90,8 +59,6 @@ void APP_Initialize(void)
     MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
     BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM1, MASTER_ADDRESS);
     my_usart_obj->bsc_usart_obj = bsc_usart_obj;
-    BSC_USART_WriteCallbackRegister(bsc_usart_obj, MASTER_TX_Callback, (uintptr_t)my_usart_obj);
-    BSC_USART_ReadCallbackRegister(bsc_usart_obj, MASTER_RX_Callback, (uintptr_t)my_usart_obj);
 
     appData.state = APP_STATE_INIT;
 }
@@ -102,12 +69,8 @@ void APP_Tasks(void)
 {
 
     MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
-    my_usart_obj->task_handle = xTaskGetCurrentTaskHandle();
 
     vTaskDelay(pdMS_TO_TICKS(10)); // Delay to allow other tasks to initialize
-
-    char count = 'A';
-
 
     /* Check the application's current state. */
     switch (appData.state)
@@ -117,29 +80,26 @@ void APP_Tasks(void)
 
         while (true)
         {
-            printf("  \nTransaction %c\n", count);
+            printf("  \nTransaction %c\n", my_usart_obj->tx_buffer.data[0]);
             for (int slave_index = DRV_USART_INDEX_SLAVE0; slave_index < DRV_USART_INDEX_SLAVE0 + NUMBER_OF_SLAVES; slave_index++)
             {
                 printf("M->S%d\n", slave_index);
                 // build packet
-                usart_objs[DRV_USART_INDEX_MASTER].tx_buffer.data[0] = count;
-                usart_objs[DRV_USART_INDEX_MASTER].tx_buffer.to_addr = slave_index;
+                my_usart_obj->tx_buffer.to_addr = slave_index;
 
                 // message from host to slaves
-                begin_read(&usart_objs[DRV_USART_INDEX_MASTER]);
-                block_write(&usart_objs[DRV_USART_INDEX_MASTER]);
+                begin_read(my_usart_obj);
+                block_write(my_usart_obj);
 
                 // response from slave to host
-                block_rx_ready(&usart_objs[DRV_USART_INDEX_MASTER]);
+                block_rx_ready(my_usart_obj);
 
+                vTaskDelay(pdMS_TO_TICKS(1000));
             }
+
+            my_usart_obj->tx_buffer.data[0] = my_usart_obj->tx_buffer.data[0]  < 'Z' ? my_usart_obj->tx_buffer.data[0] + 1 : 'A';
+            vTaskDelay(pdMS_TO_TICKS(1000));
             LED_GREEN_Toggle();
-            count++; // Increment count for next transaction
-            if(count =='A'+5)
-            {
-                vTaskDelay(pdMS_TO_TICKS(5000));
-                count = 'A'; // Reset count after 5 transactions
-            }
         }
         break;
     case APP_STATE_SERVICE_TASKS:
