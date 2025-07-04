@@ -12,8 +12,8 @@ Pin Number,Pin ID,Custom Name,Function,Mode, Direction,Latch,Pull Up,Pull Down,D
 13,PA04,,Available,,,,,,NORMAL
 14,PA05,,Available,,,,,,NORMAL
 15,PA06,,Available,,,,,,NORMAL
-16,PA07,,Available,,,,,,NORMAL
-17,PA08,,Available,,,,,,NORMAL
+16,PA07,,Available,,Out,,,,NORMAL
+17,PA08,TP2,GPIO,Digital,Out,Low,,,NORMAL
 18,PA09,,Available,,,,,,NORMAL
 19,PA10,,Available,,,,,,NORMAL
 20,PA11,,Available,,,,,,NORMAL

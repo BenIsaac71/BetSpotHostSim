@@ -33,9 +33,9 @@
 // *****************************************************************************
 // *****************************************************************************
 /* SERCOM1 USART baud value for 100000 Hz baud rate */
-#define BSC_USART_INT_BAUD_VALUE            (63788UL)
+//#define BSC_USART_INT_BAUD_VALUE            (63788UL)
 /* SERCOM1 USART baud value for 1000000 Hz baud rate */
-//#define BSC_USART_INT_BAUD_VALUE            (48059UL)
+#define BSC_USART_INT_BAUD_VALUE            (48059UL)
 
 // *****************************************************************************
 // TE functions form SERCOM_USART#
@@ -357,13 +357,31 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
                 {
                     /* 9-bit mode */
                     bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)(buffer))[processedSize] | 0x100U;;
+                    if(bsc_usart_obj->dmac_channel_tx != DMAC_CHANNEL_NONE)
+                    {
+                        //wait for the DMAC to complete the previous transfer
+                        while (DMAC_ChannelIsBusy(bsc_usart_obj->dmac_channel_tx));
+                    }
+
                 }
                 processedSize += 1U;
             }
             bsc_usart_obj->txProcessedSize = processedSize;
 
-            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTFLAG_DRE_Msk;
+            if (bsc_usart_obj->dmac_channel_tx != DMAC_CHANNEL_NONE)
+            {
+                uint8_t *dst = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
+                uint8_t *src = &((uint8_t *)bsc_usart_obj->txBuffer)[processedSize];
 
+                /* Set up the DMAC transfer */                               
+                DMAC_ChannelTransfer(bsc_usart_obj->dmac_channel_tx, src, dst, bsc_usart_obj->txSize - processedSize);
+                bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
+            }
+            else
+            {
+                /* Enable the data register empty interrupt */
+                bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENSET_DRE_Msk;
+            }
             writeStatus = true;
         }
     }
@@ -539,7 +557,6 @@ void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc
                 ((addr == bsc_usart_obj->address) || (addr == GLOBAL_ADDRESS)))
         {
             // My address or global address
-            printf("-%d\n", addr);
             ((uint8_t *)bsc_usart_obj->rxBuffer)[0] = addr;
             bsc_usart_obj->rxProcessedSize = 1;
         }
@@ -590,23 +607,6 @@ void static __attribute__((used)) BSC_USART_ISR_TX_Handler(BSC_USART_OBJECT *bsc
 
         while (dataRegisterEmpty && dataAvailable)
         {
-            if(txProcessedSize == 2)// one byte needs to be sent with no 9th bit set
-            {
-                if (bsc_usart_obj->dmac_channel_tx != DMAC_CHANNEL_NONE)
-                {
-                    uint8_t *dst = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
-                    uint8_t *src = &((uint8_t *)bsc_usart_obj->txBuffer)[txProcessedSize];
-
-                    /* Set up the DMAC transfer */                               
-                    DMAC_ChannelTransfer(bsc_usart_obj->dmac_channel_tx, src, dst, bsc_usart_obj->txSize - txProcessedSize);
-                    bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)SERCOM_USART_INT_INTENCLR_DRE_Msk;
-                    bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
-
-                    TP1_Clear();
-                    return;
-                }
-            }
-         
             /* 8-bit mode */
             bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)bsc_usart_obj->txBuffer)[txProcessedSize];
             /* Increment processed size */
@@ -653,6 +653,7 @@ void static __attribute__((used)) BSC_USART_ISR_TXC_Handler(BSC_USART_OBJECT *bs
 
 void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usart_obj)
 {
+    TP2_Set();
     bool testCondition;
     if (bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET != 0U)
     {
@@ -689,6 +690,7 @@ void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usar
             BSC_USART_ISR_RX_Handler(bsc_usart_obj);
         }
     }
+    TP2_Clear();
 }
 
 void BSC_USART_SetAddress(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address)

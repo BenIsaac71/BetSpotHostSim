@@ -78,6 +78,15 @@
 #define SLAVE1_TX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
 #define SLAVE1_TX_PIN                  PORT_PIN_PB08
 
+/*** Macros for TP2 pin ***/
+#define TP2_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 8U))
+#define TP2_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 8U))
+#define TP2_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 8U))
+#define TP2_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 8U))
+#define TP2_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 8U))
+#define TP2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 8U)) & 0x01U)
+#define TP2_PIN                  PORT_PIN_PA08
+
 /*** Macros for SLAVE1_TE pin ***/
 #define SLAVE1_TE_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 10U))
 #define SLAVE1_TE_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 10U))
