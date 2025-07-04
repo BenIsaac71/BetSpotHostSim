@@ -577,6 +577,8 @@ void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc
 
 void static __attribute__((used)) BSC_USART_ISR_TX_Handler(BSC_USART_OBJECT *bsc_usart_obj)
 {
+    TP1_Set();
+
     bool  dataRegisterEmpty;
     bool  dataAvailable;
     if (bsc_usart_obj->txBusyStatus == true)
@@ -600,6 +602,7 @@ void static __attribute__((used)) BSC_USART_ISR_TX_Handler(BSC_USART_OBJECT *bsc
                     bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)SERCOM_USART_INT_INTENCLR_DRE_Msk;
                     bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
 
+                    TP1_Clear();
                     return;
                 }
             }
@@ -628,6 +631,8 @@ void static __attribute__((used)) BSC_USART_ISR_TX_Handler(BSC_USART_OBJECT *bsc
             }
         }
     }
+    TP1_Clear();
+
 }
 
 void static __attribute__((used)) BSC_USART_ISR_TXC_Handler(BSC_USART_OBJECT *bsc_usart_obj)

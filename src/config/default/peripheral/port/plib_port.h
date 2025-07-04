@@ -65,6 +65,15 @@
 // *****************************************************************************
 // *****************************************************************************
 
+/*** Macros for TP1 pin ***/
+#define TP1_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 0U))
+#define TP1_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 0U))
+#define TP1_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 0U))
+#define TP1_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 0U))
+#define TP1_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 0U))
+#define TP1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 0U)) & 0x01U)
+#define TP1_PIN                  PORT_PIN_PA00
+
 /*** Macros for SLAVE1_TX pin ***/
 #define SLAVE1_TX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
 #define SLAVE1_TX_PIN                  PORT_PIN_PB08

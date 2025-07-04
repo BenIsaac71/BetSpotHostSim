@@ -8456,6 +8456,7 @@ TickType_t uxTaskResetEventItemValue( void )
     configRUN_TIME_COUNTER_TYPE ulTaskGetRunTimePercent( const TaskHandle_t xTask )
     {
         TCB_t * pxTCB;
+        (void)pxTCB;// Suppress unused variable warning
         configRUN_TIME_COUNTER_TYPE ulTotalTime, ulReturn, ulTaskRunTime;
 
         traceENTER_ulTaskGetRunTimePercent( xTask );

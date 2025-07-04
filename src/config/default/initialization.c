@@ -250,6 +250,8 @@ void SYS_Initialize ( void* data )
 
     SERCOM4_USART_Initialize();
 
+    TC0_TimerInitialize();
+
 
     /* MISRAC 2012 deviation block start */
     /* Following MISRA-C rules deviated in this block  */
@@ -281,6 +283,7 @@ void SYS_Initialize ( void* data )
 #if NUMBER_OF_SLAVES > 1
     SLAVE1_Initialize();
 #endif
+
 
     NVIC_Initialize();
 
