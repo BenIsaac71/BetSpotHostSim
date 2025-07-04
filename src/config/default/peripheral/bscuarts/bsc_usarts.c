@@ -1,5 +1,5 @@
 /*******************************************************************************
-  SERCOM Universal Synchronous/Asynchrnous Receiver/Transmitter PLIB
+  SERCOM Universal Synchronous/Asynchronous Receiver/Transmitter PLIB
 
   Company
     Light & Wonder
@@ -27,6 +27,9 @@
 #include "interrupts.h"
 #include "bsc_usarts.h"
 #include "definitions.h"
+
+void BSC_DMAC_RXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context);
+
 // *****************************************************************************
 // *****************************************************************************
 // // Section: Global Data
@@ -157,6 +160,8 @@ BSC_USART_OBJECT *BSC_USART_Initialize(BSC_USART_SERCOM_ID sercom_id, uint8_t ad
     {
         /* Do nothing */
     }
+
+    DMAC_ChannelCallbackRegister(bsc_usart_obj->dmac_channel_rx, BSC_DMAC_RXChannelCallback, (uintptr_t)bsc_usart_obj);
 
     /* Initialize instance object */
     bsc_usart_obj->address = address;
@@ -357,10 +362,12 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
                 {
                     /* 9-bit mode */
                     bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)(buffer))[processedSize] | 0x100U;;
-                    if(bsc_usart_obj->dmac_channel_tx != DMAC_CHANNEL_NONE)
+                    if (bsc_usart_obj->dmac_channel_tx != DMAC_CHANNEL_NONE)
                     {
-                        //wait for the DMAC to complete the previous transfer
-                        while (DMAC_ChannelIsBusy(bsc_usart_obj->dmac_channel_tx));
+                        while ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) != SERCOM_USART_INT_INTFLAG_DRE_Msk)
+                        {
+                            /* Wait for DRE flag to be set next xfer will clear 9th bit */
+                        };
                     }
 
                 }
@@ -373,7 +380,7 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
                 uint8_t *dst = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
                 uint8_t *src = &((uint8_t *)bsc_usart_obj->txBuffer)[processedSize];
 
-                /* Set up the DMAC transfer */                               
+                /* Set up the DMAC transfer */
                 DMAC_ChannelTransfer(bsc_usart_obj->dmac_channel_tx, src, dst, bsc_usart_obj->txSize - processedSize);
                 bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
             }
@@ -540,114 +547,81 @@ void static __attribute__((used)) BSC_USART_ISR_ERR_Handler(BSC_USART_OBJECT *bs
     }
 }
 
-void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc_usart_obj)
+void BSC_DMAC_RXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context)
 {
-    if (!bsc_usart_obj->rxBusyStatus)
-        return;
+    BSC_USART_OBJECT *bsc_usart_obj = (BSC_USART_OBJECT *)context;
 
-    // Read the received data (9-bit)
-    uint16_t temp = (uint16_t)bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
-
-    // Check for 9th bit (start of packet/address byte)
-    if (temp & 0x0100U)
+    bsc_usart_obj->rxProcessedSize += DMAC_ChannelGetTransferredCount(bsc_usart_obj->dmac_channel_rx);
+    uint8_t address = ((uint8_t *)bsc_usart_obj->rxBuffer)[0];
+    // If all bytes received, finish up
+    if ((bsc_usart_obj->address == address || bsc_usart_obj->address == GLOBAL_ADDRESS) &&
+            bsc_usart_obj->rxProcessedSize == bsc_usart_obj->rxSize)
     {
-        uint8_t addr = (uint8_t)(temp & 0x00FFU);
-
-        if ((bsc_usart_obj->rxProcessedSize == 0) &&
-                ((addr == bsc_usart_obj->address) || (addr == GLOBAL_ADDRESS)))
+        bsc_usart_obj->rxBusyStatus = false;
+        bsc_usart_obj->rxSize = 0U;
+        if (bsc_usart_obj->rxCallback != NULL)
         {
-            // My address or global address
-            ((uint8_t *)bsc_usart_obj->rxBuffer)[0] = addr;
-            bsc_usart_obj->rxProcessedSize = 1;
+            bsc_usart_obj->rxCallback(bsc_usart_obj->rxContext);
         }
     }
-    else if (bsc_usart_obj->rxProcessedSize > 0)
+    else
     {
-        // Store received byte
-        ((uint8_t *)bsc_usart_obj->rxBuffer)[bsc_usart_obj->rxProcessedSize] = (uint8_t)temp;
-        bsc_usart_obj->rxProcessedSize++;
-
-        // If length byte (assuming second byte is length)
-        if (bsc_usart_obj->rxProcessedSize == 2)
-        {
-            // Set rxSize to expected total packet size (address + length + payload/meta)
-            uint8_t len = ((uint8_t *)bsc_usart_obj->rxBuffer)[1];
-            bsc_usart_obj->rxSize = len + BS_MESSAGE_META_SIZE;
-        }
-
-        // If all bytes received, finish up
-        if (bsc_usart_obj->rxProcessedSize == bsc_usart_obj->rxSize && bsc_usart_obj->rxSize > 0)
-        {
-            bsc_usart_obj->rxBusyStatus = false;
-            bsc_usart_obj->rxSize = 0U;
-            // Disable RX and error interrupts
-            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR =
-                (uint8_t)(SERCOM_USART_INT_INTENCLR_RXC_Msk | SERCOM_USART_INT_INTENCLR_ERROR_Msk);
-
-            if (bsc_usart_obj->rxCallback != NULL)
-            {
-                bsc_usart_obj->rxCallback(bsc_usart_obj->rxContext);
-            }
-        }
+        // not for me or bad packet, start looking for new packet
+        bsc_usart_obj->rxProcessedSize = 0;
+        bsc_usart_obj->rxSize = 2U;//need at least 2 bytes to start looking for new packet
+        bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET =
+            (uint8_t)(SERCOM_USART_INT_INTENSET_RXC_Msk | SERCOM_USART_INT_INTENSET_ERROR_Msk);
     }
 }
 
-void static __attribute__((used)) BSC_USART_ISR_TX_Handler(BSC_USART_OBJECT *bsc_usart_obj)
+void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc_usart_obj)
 {
     TP1_Set();
-
-    bool  dataRegisterEmpty;
-    bool  dataAvailable;
-    if (bsc_usart_obj->txBusyStatus == true)
+    if (bsc_usart_obj->rxBusyStatus == true)
     {
-        size_t txProcessedSize = bsc_usart_obj->txProcessedSize;
-
-        dataAvailable = (txProcessedSize < bsc_usart_obj->txSize);
-        dataRegisterEmpty = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk);
-
-        while (dataRegisterEmpty && dataAvailable)
+        if (bsc_usart_obj->rxProcessedSize < bsc_usart_obj->rxSize)
         {
-            /* 8-bit mode */
-            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)bsc_usart_obj->txBuffer)[txProcessedSize];
-            /* Increment processed size */
-            txProcessedSize++;
+            uint16_t temp = bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
 
-            dataAvailable = (txProcessedSize < bsc_usart_obj->txSize);
-            dataRegisterEmpty = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk);
-        }
-
-        bsc_usart_obj->txProcessedSize = txProcessedSize;
-
-        if (txProcessedSize >= bsc_usart_obj->txSize)
-        {
-            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)SERCOM_USART_INT_INTENCLR_DRE_Msk;
-            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
-            bsc_usart_obj->txBusyStatus = false;
-            bsc_usart_obj->txSize = 0U;
-            if (bsc_usart_obj->txCallback != NULL)
+            if (temp & 0x0100U)
             {
-                uintptr_t txContext = bsc_usart_obj->txContext;
-                bsc_usart_obj->txCallback(txContext);
+                // address with 9th bit set, indicates start of packet
+                ((uint8_t *)bsc_usart_obj->rxBuffer)[0] = temp;
+                bsc_usart_obj->rxProcessedSize = 1;
+            }
+            else if (bsc_usart_obj->rxProcessedSize == 1)
+            {
+                // receive packet length = payload length + meta
+                bsc_usart_obj->rxSize = temp + BS_MESSAGE_META_SIZE;
+                /* Store received byte */
+                ((uint8_t *)bsc_usart_obj->rxBuffer)[bsc_usart_obj->rxProcessedSize] = (uint8_t)temp;
+                bsc_usart_obj->rxProcessedSize++;
+
+                // Set up the DMAC transfer
+                uint8_t *dst = &((uint8_t *)bsc_usart_obj->rxBuffer)[bsc_usart_obj->rxProcessedSize];
+                uint8_t *src = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
+                DMAC_ChannelTransfer(bsc_usart_obj->dmac_channel_rx, src, dst, bsc_usart_obj->rxSize - bsc_usart_obj->rxProcessedSize);
+
+                // Disable RX and error interrupts
+                bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR =
+                    (uint8_t)(SERCOM_USART_INT_INTENCLR_RXC_Msk | SERCOM_USART_INT_INTENCLR_ERROR_Msk);
             }
         }
     }
     TP1_Clear();
-
 }
 
 void static __attribute__((used)) BSC_USART_ISR_TXC_Handler(BSC_USART_OBJECT *bsc_usart_obj)
 {
     bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
     bsc_usart_obj->te_clr();
-    if (bsc_usart_obj->dmac_channel_tx != DMAC_CHANNEL_NONE)
+    bsc_usart_obj->txBusyStatus = false;
+    bsc_usart_obj->txSize = 0U;
+
+    if (bsc_usart_obj->txCallback != NULL)
     {
-        bsc_usart_obj->txBusyStatus = false;
-        bsc_usart_obj->txSize = 0U;
-        if (bsc_usart_obj->txCallback != NULL)
-        {
-            uintptr_t txContext = bsc_usart_obj->txContext;
-            bsc_usart_obj->txCallback(txContext);
-        }
+        uintptr_t txContext = bsc_usart_obj->txContext;
+        bsc_usart_obj->txCallback(txContext);
     }
 }
 
@@ -665,14 +639,6 @@ void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usar
             BSC_USART_ISR_ERR_Handler(bsc_usart_obj);
         }
 
-        testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) == SERCOM_USART_INT_INTFLAG_DRE_Msk);
-        testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTENSET_DRE_Msk) == SERCOM_USART_INT_INTENSET_DRE_Msk) && testCondition;
-        /* Checks for data register empty flag */
-        if (testCondition)
-        {
-            BSC_USART_ISR_TX_Handler(bsc_usart_obj);
-        }
-
         testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_TXC_Msk) == SERCOM_USART_INT_INTFLAG_TXC_Msk);
         testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTFLAG_TXC_Msk) == SERCOM_USART_INT_INTFLAG_TXC_Msk) && testCondition;
         /* Checks for data register empty flag */
@@ -680,7 +646,6 @@ void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usar
         {
             BSC_USART_ISR_TXC_Handler(bsc_usart_obj);
         }
-
 
         testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_RXC_Msk) == SERCOM_USART_INT_INTFLAG_RXC_Msk);
         testCondition = ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET & SERCOM_USART_INT_INTENSET_RXC_Msk) == SERCOM_USART_INT_INTENSET_RXC_Msk) && testCondition;

@@ -118,7 +118,6 @@ void DMAC_Initialize( void )
 
    dmacChannelObj[0].inUse = true;
 
-   DMAC_REGS->CHANNEL[0].DMAC_CHINTENSET = (DMAC_CHINTENSET_TERR_Msk | DMAC_CHINTENSET_TCMPL_Msk);
 
 
    /***************** Configure DMA channel 1 ********************/
@@ -130,7 +129,6 @@ void DMAC_Initialize( void )
 
    dmacChannelObj[1].inUse = true;
 
-   DMAC_REGS->CHANNEL[1].DMAC_CHINTENSET = (DMAC_CHINTENSET_TERR_Msk | DMAC_CHINTENSET_TCMPL_Msk);
 
 
    /***************** Configure DMA channel 2 ********************/
@@ -142,7 +140,6 @@ void DMAC_Initialize( void )
 
    dmacChannelObj[2].inUse = true;
 
-   DMAC_REGS->CHANNEL[2].DMAC_CHINTENSET = (DMAC_CHINTENSET_TERR_Msk | DMAC_CHINTENSET_TCMPL_Msk);
 
 
    /***************** Configure DMA channel 3 ********************/

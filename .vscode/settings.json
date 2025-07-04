@@ -1,1 +1,20 @@
-{}
+{
+    "cSpell.words": [
+        "BUFOVF",
+        "CTRLA",
+        "CTRLB",
+        "DORD",
+        "IBON",
+        "INTENCLR",
+        "INTENSET",
+        "RXEN",
+        "RXPO",
+        "SAMPR",
+        "SBMODE",
+        "SERCOM",
+        "SYNCBUSY",
+        "TXEN",
+        "TXPO",
+        "USART"
+    ]
+}

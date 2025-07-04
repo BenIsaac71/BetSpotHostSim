@@ -22,7 +22,7 @@ MY_USART_OBJ usart_objs[DRV_USART_INDEX_MAX] =
 };
 
 APP_DATA appData;
-char * pcTaskGetCurrentTaskName(void)
+char *pcTaskGetCurrentTaskName(void)
 {
     return pcTaskGetName(xTaskGetCurrentTaskHandle());
 }
@@ -39,9 +39,7 @@ void block_write(MY_USART_OBJ *p_usart_obj)
 {
     BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
 
-    
-
-    printf("TXC:%s %d->%d[%s]\n",pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, msg->data);
+    printf("TXC:%s %d->%d[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, msg->data);
 
     BSC_USART_Write(p_usart_obj->bsc_usart_obj, &p_usart_obj->tx_buffer, p_usart_obj->tx_buffer.data_len + BS_MESSAGE_META_SIZE);
     while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)) // Wait for TX to complete
@@ -66,11 +64,8 @@ void block_rx_ready(MY_USART_OBJ *p_usart_obj)
     }
 
     BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
-    printf("RXC:%s %d->%d[%s]\n",pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, msg->data);
+    printf("RXC:%s %d->%d[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, msg->data);
 }
-
-volatile uint32_t ulHighFrequencyTimerTicks = 0;
-
 
 // *****************************************************************************
 void APP_Initialize(void)
