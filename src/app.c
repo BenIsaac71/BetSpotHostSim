@@ -39,33 +39,41 @@ void block_write(MY_USART_OBJ *p_usart_obj)
 {
     BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
 
-    printf("TXC:%s %d->%d[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, msg->data);
-
     BSC_USART_Write(p_usart_obj->bsc_usart_obj, &p_usart_obj->tx_buffer, p_usart_obj->tx_buffer.data_len + BS_MESSAGE_META_SIZE);
-    while (BSC_USART_WriteIsBusy(p_usart_obj->bsc_usart_obj)) // Wait for TX to complete
-    {
-        vTaskDelay(pdMS_TO_TICKS(1)); // Yield to allow other tasks to run
-    }
+    printf("TX:%s %02X->%02X[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, msg->data);
 }
 
 void block_rx_ready(MY_USART_OBJ *p_usart_obj)
 {
     // Wait for RX to complete
-    while (BSC_USART_ReadIsBusy(p_usart_obj->bsc_usart_obj)) // Wait for RX to complete
-    {
-        vTaskDelay(pdMS_TO_TICKS(1)); // Yield to allow other tasks to run
-    }
+    while (xSemaphoreTake(p_usart_obj->bsc_usart_obj->rx_semaphore, portMAX_DELAY) != pdTRUE); // Wait for RX semaphore
+    TP1_Clear();
 
     USART_ERROR error = BSC_USART_ErrorGet(p_usart_obj->bsc_usart_obj); // Clear any errors
-    if (error != USART_ERROR_NONE)
+    if (error == USART_ERROR_NONE)
+    {
+        BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
+        printf("RX:%s %02X->%02X[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, msg->data);
+    }
+    else
     {
         printf("RD Error: %d\n", error);
-        // Handle error as needed
     }
 
-    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
-    printf("RXC:%s %d->%d[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, msg->data);
 }
+
+void rx_callback(MY_USART_OBJ *p_usart_obj)
+{
+    TP1_Set();
+
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+  
+    // Give the semaphore to unblock the task waiting for RX data
+    xSemaphoreGiveFromISR(p_usart_obj->bsc_usart_obj->rx_semaphore, &xHigherPriorityTaskWoken);    
+    // If giving the semaphore unblocks a higher priority task, yield to that task
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
+}   
+
 
 // *****************************************************************************
 void APP_Initialize(void)
@@ -74,8 +82,11 @@ void APP_Initialize(void)
 
     MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_MASTER];
     BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM1, MASTER_ADDRESS);
-    my_usart_obj->bsc_usart_obj = bsc_usart_obj;
 
+    my_usart_obj->bsc_usart_obj = bsc_usart_obj;
+    bsc_usart_obj->rx_semaphore = xSemaphoreCreateBinary();
+    BSC_USART_ReadCallbackRegister(bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)my_usart_obj);
+   
     appData.state = APP_STATE_INIT;
 }
 
@@ -110,7 +121,7 @@ void APP_Tasks(void)
             }
 
             my_usart_obj->tx_buffer.data[0] = my_usart_obj->tx_buffer.data[0]  < 'Z' ? my_usart_obj->tx_buffer.data[0] + 1 : 'A';
-            vTaskDelay(pdMS_TO_TICKS(500));
+            vTaskDelay(pdMS_TO_TICKS(2));
             LED_GREEN_Toggle();
         }
         break;
@@ -120,3 +131,26 @@ void APP_Tasks(void)
         break;
     }
 }
+
+/*
+          ┌─────────────────────────┐ ┌───────────┐          
+          │      HALF DUPLEX        │ │FULL DUPLEX│          
+          │ TX->A       TX->B       │ │TX->A TX->B│          
+          │       RX<-A       RX<-B │ │RX<-B RX<-A│          
+    ┌───┐ ├────┬──┬───┬─┬────┬──┬───┤ ├────┬──┬───┤          
+    │SER│ │TX  │BS│TE#│ │RX  │BS│TE#│ │TxRx│BS│TE#│          
+    │COM│ │PORT│AB│A/B│ │PORT│AB│A/B│ │PORT│AB│A/B│          
+    ├───┤ ├────┼──┼───┤ ├────┼──┼───┤ ├────┼──┼───┤          
+    │ 0 │ │ 0  │11│ 0A│ │ 0  │01│!0A│ │0 1 │10│ 0A│          
+    │ 1 │ │ 2  │11│ 1A│ │ 2  │01│!1A│ │2 3 │10│ 1A│          
+    │ 2 │ │ 4  │11│ 2A│ │ 4  │01│!2A│ │4 5 │10│ 2A│          
+    │ 4 │ │ 6  │11│ 3A│ │ 6  │01│!3A│ │6 7 │10│ 3A│          
+    │ 5 │ │ 8  │11│ 4A│ │ 8  │01│!4A│ │8 9 │10│ 4A│          
+    ├───┤ ├────┼──┼───┤ ├────┼──┼───┤ ├────┼──┼───┤          
+    │ 0 │ │ 1  │11│ 0B│ │ 1  │10│!0B│ │1 0 │01│ 0B│          
+    │ 1 │ │ 3  │11│ 1B│ │ 3  │10│!1B│ │3 2 │01│ 1B│          
+    │ 2 │ │ 5  │11│ 2B│ │ 5  │10│!2B│ │5 4 │01│ 2B│          
+    │ 4 │ │ 7  │11│ 3B│ │ 7  │10│!3B│ │7 6 │01│ 3B│          
+    │ 5 │ │ 9  │11│ 4B│ │ 9  │10│!4B│ │9 8 │01│ 4B│          
+    └───┘ └────┴──┴───┘ └────┴──┴───┘ └────┴──┴───┘          
+*/                                                           

@@ -31,7 +31,8 @@
 #include <stdint.h>
 #include "device.h"
 #include "peripheral/dmac/plib_dmac.h"
-
+#include "FreeRTOS.h"
+#include "semphr.h"
 // DOM-IGNORE-BEGIN
 #ifdef __cplusplus // Provide C++ Compatibility
 
@@ -286,6 +287,8 @@ typedef struct
     bool                                rxBusyStatus;
 
     USART_ERROR                         errorStatus;
+
+    SemaphoreHandle_t                   rx_semaphore;
 
 } BSC_USART_OBJECT;
 

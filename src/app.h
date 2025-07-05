@@ -118,9 +118,7 @@ typedef struct
 void begin_read(MY_USART_OBJ *p_usart_obj);
 void block_write(MY_USART_OBJ *p_usart_obj);
 void block_rx_ready(MY_USART_OBJ *p_usart_obj);
-
-void TX_Callback(uintptr_t context);
-void RX_Callback(uintptr_t context);
+void rx_callback(MY_USART_OBJ *p_usart_obj);
 
 void APP_Initialize(void);
 void APP_Tasks(void);

@@ -43,22 +43,26 @@ TaskHandle_t xSlave1TaskHandle;
 // *****************************************************************************
 void SLAVE0_Initialize(void)
 {
-    xTaskCreate(SLAVE0_Tasks, "Slave0Task", 1024, NULL, tskIDLE_PRIORITY + 1, &xSlave0TaskHandle);
+    xTaskCreate(SLAVE0_Tasks, "SLV_Task0", 1024, NULL, tskIDLE_PRIORITY + 2, &xSlave0TaskHandle);
 
     MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
     BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM5, SLAVE0_ADDRESS);
 
     my_usart_obj->bsc_usart_obj = bsc_usart_obj;
+    bsc_usart_obj->rx_semaphore = xSemaphoreCreateBinary();
+    BSC_USART_ReadCallbackRegister(bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)my_usart_obj);
 }
 
 void SLAVE1_Initialize(void)
 {
-    xTaskCreate(SLAVE1_Tasks, "Slave1Task", 1024, NULL, tskIDLE_PRIORITY + 1, &xSlave1TaskHandle);
+    xTaskCreate(SLAVE1_Tasks, "SLV_Task1", 1024, NULL, tskIDLE_PRIORITY + 2, &xSlave1TaskHandle);
 
     MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE1];
     BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM4, SLAVE1_ADDRESS);
 
     my_usart_obj->bsc_usart_obj = bsc_usart_obj;
+    bsc_usart_obj->rx_semaphore = xSemaphoreCreateBinary();
+    BSC_USART_ReadCallbackRegister(bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)my_usart_obj);
 }
 
 
@@ -78,7 +82,6 @@ void SlaveTasks(SLAVE_DATA *slave_data, MY_USART_OBJ *my_usart_obj)
                 // wait for a message from the master
                 begin_read(my_usart_obj);
                 block_rx_ready(my_usart_obj);
-                vTaskDelay(pdMS_TO_TICKS(1)); 
                 // send a response back to the master
                 my_usart_obj->tx_buffer.data[0] = count;
                 block_write(my_usart_obj);

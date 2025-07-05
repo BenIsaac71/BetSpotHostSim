@@ -576,7 +576,6 @@ void BSC_DMAC_RXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context)
 
 void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc_usart_obj)
 {
-    TP1_Set();
     if (bsc_usart_obj->rxBusyStatus == true)
     {
         if (bsc_usart_obj->rxProcessedSize < bsc_usart_obj->rxSize)
@@ -608,7 +607,6 @@ void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc
             }
         }
     }
-    TP1_Clear();
 }
 
 void static __attribute__((used)) BSC_USART_ISR_TXC_Handler(BSC_USART_OBJECT *bsc_usart_obj)
@@ -627,7 +625,6 @@ void static __attribute__((used)) BSC_USART_ISR_TXC_Handler(BSC_USART_OBJECT *bs
 
 void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usart_obj)
 {
-    TP2_Set();
     bool testCondition;
     if (bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET != 0U)
     {
@@ -655,7 +652,6 @@ void __attribute__((used)) BSC_USART_InterruptHandler(BSC_USART_OBJECT *bsc_usar
             BSC_USART_ISR_RX_Handler(bsc_usart_obj);
         }
     }
-    TP2_Clear();
 }
 
 void BSC_USART_SetAddress(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address)
