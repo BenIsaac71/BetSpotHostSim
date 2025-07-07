@@ -74,9 +74,27 @@
 #define TP1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 0U)) & 0x01U)
 #define TP1_PIN                  PORT_PIN_PA00
 
-/*** Macros for SLAVE1_TX pin ***/
-#define SLAVE1_TX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
-#define SLAVE1_TX_PIN                  PORT_PIN_PB08
+/*** Macros for BANK_SEL_B pin ***/
+#define BANK_SEL_B_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 1U))
+#define BANK_SEL_B_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 1U))
+#define BANK_SEL_B_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 1U))
+#define BANK_SEL_B_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 1U))
+#define BANK_SEL_B_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 1U))
+#define BANK_SEL_B_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 1U)) & 0x01U)
+#define BANK_SEL_B_PIN                  PORT_PIN_PA01
+
+/*** Macros for BANK_SEL_A pin ***/
+#define BANK_SEL_A_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 2U))
+#define BANK_SEL_A_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 2U))
+#define BANK_SEL_A_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 2U))
+#define BANK_SEL_A_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 2U))
+#define BANK_SEL_A_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 2U))
+#define BANK_SEL_A_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 2U)) & 0x01U)
+#define BANK_SEL_A_PIN                  PORT_PIN_PA02
+
+/*** Macros for SERCOM4_TX pin ***/
+#define SERCOM4_TX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 8U)) & 0x01U)
+#define SERCOM4_TX_PIN                  PORT_PIN_PB08
 
 /*** Macros for TP2 pin ***/
 #define TP2_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 8U))
@@ -87,18 +105,18 @@
 #define TP2_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 8U)) & 0x01U)
 #define TP2_PIN                  PORT_PIN_PA08
 
-/*** Macros for SLAVE1_TE pin ***/
-#define SLAVE1_TE_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 10U))
-#define SLAVE1_TE_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 10U))
-#define SLAVE1_TE_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 10U))
-#define SLAVE1_TE_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 10U))
-#define SLAVE1_TE_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 10U))
-#define SLAVE1_TE_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 10U)) & 0x01U)
-#define SLAVE1_TE_PIN                  PORT_PIN_PB10
+/*** Macros for SERCOM4_TE_A pin ***/
+#define SERCOM4_TE_A_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 10U))
+#define SERCOM4_TE_A_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 10U))
+#define SERCOM4_TE_A_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 10U))
+#define SERCOM4_TE_A_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 10U))
+#define SERCOM4_TE_A_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 10U))
+#define SERCOM4_TE_A_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 10U)) & 0x01U)
+#define SERCOM4_TE_A_PIN                  PORT_PIN_PB10
 
-/*** Macros for SLAVE1_RX pin ***/
-#define SLAVE1_RX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 11U)) & 0x01U)
-#define SLAVE1_RX_PIN                  PORT_PIN_PB11
+/*** Macros for SERCOM4_RX pin ***/
+#define SERCOM4_RX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 11U)) & 0x01U)
+#define SERCOM4_RX_PIN                  PORT_PIN_PB11
 
 /*** Macros for DIAG_SW0 pin ***/
 #define DIAG_SW0_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 14U)) & 0x01U)
@@ -108,22 +126,22 @@
 #define DIAG_SW1_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 15U)) & 0x01U)
 #define DIAG_SW1_PIN                  PORT_PIN_PA15
 
-/*** Macros for MASTER_TX pin ***/
-#define MASTER_TX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 16U)) & 0x01U)
-#define MASTER_TX_PIN                  PORT_PIN_PA16
+/*** Macros for SERCOM1_TX pin ***/
+#define SERCOM1_TX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 16U)) & 0x01U)
+#define SERCOM1_TX_PIN                  PORT_PIN_PA16
 
-/*** Macros for MASTER_TE pin ***/
-#define MASTER_TE_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 18U))
-#define MASTER_TE_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 18U))
-#define MASTER_TE_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 18U))
-#define MASTER_TE_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 18U))
-#define MASTER_TE_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 18U))
-#define MASTER_TE_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 18U)) & 0x01U)
-#define MASTER_TE_PIN                  PORT_PIN_PA18
+/*** Macros for SERCOM1_TE_A pin ***/
+#define SERCOM1_TE_A_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 18U))
+#define SERCOM1_TE_A_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 18U))
+#define SERCOM1_TE_A_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 18U))
+#define SERCOM1_TE_A_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 18U))
+#define SERCOM1_TE_A_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 18U))
+#define SERCOM1_TE_A_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 18U)) & 0x01U)
+#define SERCOM1_TE_A_PIN                  PORT_PIN_PA18
 
-/*** Macros for MASTER_RX pin ***/
-#define MASTER_RX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 19U)) & 0x01U)
-#define MASTER_RX_PIN                  PORT_PIN_PA19
+/*** Macros for SERCOM1_RX pin ***/
+#define SERCOM1_RX_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 19U)) & 0x01U)
+#define SERCOM1_RX_PIN                  PORT_PIN_PA19
 
 /*** Macros for LED_RED pin ***/
 #define LED_RED_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 16U))
@@ -143,6 +161,33 @@
 #define LED_GREEN_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 17U)) & 0x01U)
 #define LED_GREEN_PIN                  PORT_PIN_PB17
 
+/*** Macros for SERCOM1_TE_B pin ***/
+#define SERCOM1_TE_B_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 20U))
+#define SERCOM1_TE_B_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 20U))
+#define SERCOM1_TE_B_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 20U))
+#define SERCOM1_TE_B_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 20U))
+#define SERCOM1_TE_B_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 20U))
+#define SERCOM1_TE_B_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 20U)) & 0x01U)
+#define SERCOM1_TE_B_PIN                  PORT_PIN_PA20
+
+/*** Macros for SERCOM5_TE_B pin ***/
+#define SERCOM5_TE_B_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 21U))
+#define SERCOM5_TE_B_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 21U))
+#define SERCOM5_TE_B_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 21U))
+#define SERCOM5_TE_B_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 21U))
+#define SERCOM5_TE_B_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 21U))
+#define SERCOM5_TE_B_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 21U)) & 0x01U)
+#define SERCOM5_TE_B_PIN                  PORT_PIN_PA21
+
+/*** Macros for SERCOM4_TE_B pin ***/
+#define SERCOM4_TE_B_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 22U))
+#define SERCOM4_TE_B_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 22U))
+#define SERCOM4_TE_B_Toggle()            (PORT_REGS->GROUP[0].PORT_OUTTGL = ((uint32_t)1U << 22U))
+#define SERCOM4_TE_B_OutputEnable()      (PORT_REGS->GROUP[0].PORT_DIRSET = ((uint32_t)1U << 22U))
+#define SERCOM4_TE_B_InputEnable()       (PORT_REGS->GROUP[0].PORT_DIRCLR = ((uint32_t)1U << 22U))
+#define SERCOM4_TE_B_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 22U)) & 0x01U)
+#define SERCOM4_TE_B_PIN                  PORT_PIN_PA22
+
 /*** Macros for USB_VBUS_SENSE pin ***/
 #define USB_VBUS_SENSE_Set()               (PORT_REGS->GROUP[0].PORT_OUTSET = ((uint32_t)1U << 23U))
 #define USB_VBUS_SENSE_Clear()             (PORT_REGS->GROUP[0].PORT_OUTCLR = ((uint32_t)1U << 23U))
@@ -160,22 +205,22 @@
 #define USB_DP_Get()               (((PORT_REGS->GROUP[0].PORT_IN >> 25U)) & 0x01U)
 #define USB_DP_PIN                  PORT_PIN_PA25
 
-/*** Macros for SLAVE0_TE pin ***/
-#define SLAVE0_TE_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 0U))
-#define SLAVE0_TE_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 0U))
-#define SLAVE0_TE_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 0U))
-#define SLAVE0_TE_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 0U))
-#define SLAVE0_TE_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 0U))
-#define SLAVE0_TE_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 0U)) & 0x01U)
-#define SLAVE0_TE_PIN                  PORT_PIN_PB00
+/*** Macros for SERCOM5_TE_A pin ***/
+#define SERCOM5_TE_A_Set()               (PORT_REGS->GROUP[1].PORT_OUTSET = ((uint32_t)1U << 0U))
+#define SERCOM5_TE_A_Clear()             (PORT_REGS->GROUP[1].PORT_OUTCLR = ((uint32_t)1U << 0U))
+#define SERCOM5_TE_A_Toggle()            (PORT_REGS->GROUP[1].PORT_OUTTGL = ((uint32_t)1U << 0U))
+#define SERCOM5_TE_A_OutputEnable()      (PORT_REGS->GROUP[1].PORT_DIRSET = ((uint32_t)1U << 0U))
+#define SERCOM5_TE_A_InputEnable()       (PORT_REGS->GROUP[1].PORT_DIRCLR = ((uint32_t)1U << 0U))
+#define SERCOM5_TE_A_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 0U)) & 0x01U)
+#define SERCOM5_TE_A_PIN                  PORT_PIN_PB00
 
-/*** Macros for SLAVE0_RX pin ***/
-#define SLAVE0_RX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 1U)) & 0x01U)
-#define SLAVE0_RX_PIN                  PORT_PIN_PB01
+/*** Macros for SERCOM5_RX pin ***/
+#define SERCOM5_RX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 1U)) & 0x01U)
+#define SERCOM5_RX_PIN                  PORT_PIN_PB01
 
-/*** Macros for SLAVE0_TX pin ***/
-#define SLAVE0_TX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 2U)) & 0x01U)
-#define SLAVE0_TX_PIN                  PORT_PIN_PB02
+/*** Macros for SERCOM5_TX pin ***/
+#define SERCOM5_TX_Get()               (((PORT_REGS->GROUP[1].PORT_IN >> 2U)) & 0x01U)
+#define SERCOM5_TX_PIN                  PORT_PIN_PB02
 
 // *****************************************************************************
 /* PORT Group

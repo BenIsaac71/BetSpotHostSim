@@ -75,6 +75,7 @@
 #include "osal/osal.h"
 #include "system/debug/sys_debug.h"
 #include "app.h"
+#include "master.h"
 #include "slave.h"
 #include "peripheral/bscuarts/bsc_usarts.h"
 

@@ -70,6 +70,8 @@ extern "C" {
 // *****************************************************************************
 BSC_USART_OBJECT *BSC_USART_Initialize( BSC_USART_SERCOM_ID sercom_id, uint8_t address );
 
+void BSC_USART_SetBank(BSC_USART_BANK bank);
+
 bool BSC_USART_SerialSetup( BSC_USART_OBJECT *bsc_usart_obj, USART_SERIAL_SETUP *serialSetup, uint32_t clkFrequency );
 
 void BSC_USART_Enable( BSC_USART_OBJECT *bsc_usart_obj );

@@ -277,12 +277,6 @@ void SYS_Initialize ( void* data )
 
     /* MISRAC 2012 deviation block end */
     APP_Initialize();
-#if NUMBER_OF_SLAVES > 0
-    SLAVE0_Initialize();
-#endif
-#if NUMBER_OF_SLAVES > 1
-    SLAVE1_Initialize();
-#endif
 
 
     NVIC_Initialize();

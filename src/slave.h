@@ -3,7 +3,7 @@
 
 // *****************************************************************************
 #include "definitions.h"
-
+#include "bsc_usarts.h"
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 extern "C" {
@@ -12,34 +12,21 @@ extern "C" {
 // *****************************************************************************
 typedef enum
 {
-    /* Application's state machine's initial state. */
     SLAVE_STATE_INIT = 0,
     SLAVE_STATE_WAITING_FOR_MESSAGE,
     SLAVE_STATE_TRANSMITTING_RESPONSE,
-    /* TODO: Define states used by the application state machine. */
-
 } SLAVE_STATES;
-
 
 // *****************************************************************************
 typedef struct
 {
-    /* The application's current state */
+    TaskHandle_t xTaskHandle;
+    MY_USART_OBJ my_usart_obj;
     SLAVE_STATES state;
-
-    /* TODO: Define any additional data used by the application. */
-
 } SLAVE_DATA;
 
-
 // *****************************************************************************
-void SLAVE0_Initialize(void);
-void SLAVE0_Tasks(void *pvParameters);
-
-void SLAVE1_Initialize(void);
-void SLAVE1_Tasks(void *pvParameters);
-
-// *****************************************************************************
+void SLAVE_Initialize(void);
 
 
 #ifdef __cplusplus

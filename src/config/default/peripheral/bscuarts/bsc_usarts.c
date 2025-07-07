@@ -40,48 +40,63 @@ void BSC_DMAC_RXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context);
 /* SERCOM1 USART baud value for 1000000 Hz baud rate */
 #define BSC_USART_INT_BAUD_VALUE            (48059UL)
 
-// *****************************************************************************
-// TE functions form SERCOM_USART#
-// *****************************************************************************
-#define BSC_USART_TE_funcs(id) \
-    void BSC_TE_SET_SERCOM##id(void) \
-    { \
-        SERCOM##id##_TE_Set \
-} \
-    void BSC_TE_CLR_SERCOM##id(void) \
-    { \
-        SERCOM##id##_TE_Clear \
-    }
-
-BSC_USART_TE_funcs(0)
-BSC_USART_TE_funcs(1)
-BSC_USART_TE_funcs(2)
-BSC_USART_TE_funcs(3)
-BSC_USART_TE_funcs(4)
-BSC_USART_TE_funcs(5)
-
 
 // *****************************************************************************
-#define BSC_USART_OBJECT_INIT(id) \
+#define BSC_USART_OBJECT_INIT(SERCOM_NUM) \
     { \
-        .bsc_usart_id = BSC_USART_SERCOM##id, \
-        .dmac_channel_tx = SERCOM##id##_DMAC_TX_CHANNEL, \
-        .dmac_channel_rx = SERCOM##id##_DMAC_RX_CHANNEL, \
-        .te_set = BSC_TE_SET_SERCOM##id, \
-        .te_clr = BSC_TE_CLR_SERCOM##id, \
-        .sercom_regs = SERCOM##id##_REGS, \
+        .bsc_usart_id = BSC_USART_SERCOM##SERCOM_NUM, \
+        .dmac_channel_tx = SERCOM##SERCOM_NUM##_DMAC_TX_CHANNEL, \
+        .dmac_channel_rx = SERCOM##SERCOM_NUM##_DMAC_RX_CHANNEL, \
+        .sercom_regs = SERCOM##SERCOM_NUM##_REGS, \
         .peripheral_clk_freq = 60000000UL, \
     }
 
 static BSC_USART_OBJECT bsc_usart_objs[BSC_USART_SERCOM_MAX] =
 {
-    BSC_USART_OBJECT_INIT(0),
     BSC_USART_OBJECT_INIT(1),
-    BSC_USART_OBJECT_INIT(2),
-    BSC_USART_OBJECT_INIT(3),
     BSC_USART_OBJECT_INIT(4),
     BSC_USART_OBJECT_INIT(5)
 };
+
+// *****************************************************************************
+// TE functions for SERCOM_USART#BANKA\B
+// *****************************************************************************
+#define BSC_USART_TE_funcs(SERCOM_NUM) \
+    static void BSC_TE_SET_SERCOM##SERCOM_NUM##_BANKA(void) { SERCOM##SERCOM_NUM##_TE_A_Set(); } \
+    static void BSC_TE_CLR_SERCOM##SERCOM_NUM##_BANKA(void) { SERCOM##SERCOM_NUM##_TE_A_Clear(); } \
+    static void BSC_TE_SET_SERCOM##SERCOM_NUM##_BANKB(void) { SERCOM##SERCOM_NUM##_TE_B_Set(); } \
+    static void BSC_TE_CLR_SERCOM##SERCOM_NUM##_BANKB(void) { SERCOM##SERCOM_NUM##_TE_B_Clear(); }
+
+BSC_USART_TE_funcs(1)
+BSC_USART_TE_funcs(4)
+BSC_USART_TE_funcs(5)
+
+#define BSC_USART_SET_BANK_ASSIGN(SERCOM_NUM, BANK) \
+    bsc_usart_objs[BSC_USART_SERCOM##SERCOM_NUM].te_set = BSC_TE_SET_SERCOM##SERCOM_NUM##_##BANK; \
+    bsc_usart_objs[BSC_USART_SERCOM##SERCOM_NUM].te_clr = BSC_TE_CLR_SERCOM##SERCOM_NUM##_##BANK;
+
+#define RE_BANK_A() BANK_SEL_A_Clear(); BANK_SEL_B_Set();
+#define RE_BANK_B() BANK_SEL_A_Set();   BANK_SEL_B_Clear(); 
+
+void BSC_USART_SetBank(BSC_USART_BANK bank)
+{
+    if (bank == BSC_USART_BANK_A)
+    {
+        RE_BANK_A(); 
+        BSC_USART_SET_BANK_ASSIGN(1, BANKA)
+        BSC_USART_SET_BANK_ASSIGN(4, BANKA)
+        BSC_USART_SET_BANK_ASSIGN(5, BANKA)
+    }
+    else
+    {
+        RE_BANK_B();
+        BANK_SEL_A_Set();
+        BANK_SEL_B_Clear();
+        BSC_USART_SET_BANK_ASSIGN(1, BANKB)
+        BSC_USART_SET_BANK_ASSIGN(4, BANKB)
+        BSC_USART_SET_BANK_ASSIGN(5, BANKB)
+    }
+}
 
 // *****************************************************************************
 // *****************************************************************************
@@ -176,6 +191,10 @@ BSC_USART_OBJECT *BSC_USART_Initialize(BSC_USART_SERCOM_ID sercom_id, uint8_t ad
     bsc_usart_obj->txBusyStatus = false;
     bsc_usart_obj->txCallback = NULL;
     bsc_usart_obj->errorStatus = USART_ERROR_NONE;
+
+    bsc_usart_obj->rx_semaphore = xSemaphoreCreateBinary();
+
+    BSC_USART_SetBank(BSC_USART_BANK_A); // Default to Bank A
 
     return bsc_usart_obj;
 }
@@ -362,33 +381,22 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
                 {
                     /* 9-bit mode */
                     bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA = ((uint8_t *)(buffer))[processedSize] | 0x100U;;
-                    if (bsc_usart_obj->dmac_channel_tx != DMAC_CHANNEL_NONE)
+                    while ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) != SERCOM_USART_INT_INTFLAG_DRE_Msk)
                     {
-                        while ((bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTFLAG & SERCOM_USART_INT_INTFLAG_DRE_Msk) != SERCOM_USART_INT_INTFLAG_DRE_Msk)
-                        {
-                            /* Wait for DRE flag to be set next xfer will clear 9th bit */
-                        };
-                    }
+                        /* Wait for DRE flag to be set next xfer will clear 9th bit */
+                    };
 
                 }
                 processedSize += 1U;
             }
             bsc_usart_obj->txProcessedSize = processedSize;
 
-            if (bsc_usart_obj->dmac_channel_tx != DMAC_CHANNEL_NONE)
-            {
-                uint8_t *dst = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
-                uint8_t *src = &((uint8_t *)bsc_usart_obj->txBuffer)[processedSize];
+            uint8_t *dst = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
+            uint8_t *src = &((uint8_t *)bsc_usart_obj->txBuffer)[processedSize];
 
-                /* Set up the DMAC transfer */
-                DMAC_ChannelTransfer(bsc_usart_obj->dmac_channel_tx, src, dst, bsc_usart_obj->txSize - processedSize);
-                bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
-            }
-            else
-            {
-                /* Enable the data register empty interrupt */
-                bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENSET_DRE_Msk;
-            }
+            /* Set up the DMAC transfer */
+            DMAC_ChannelTransfer(bsc_usart_obj->dmac_channel_tx, src, dst, bsc_usart_obj->txSize - processedSize);
+            bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
             writeStatus = true;
         }
     }
@@ -659,34 +667,21 @@ void BSC_USART_SetAddress(BSC_USART_OBJECT *bsc_usart_obj, uint8_t address)
     bsc_usart_obj->address = address;
 }
 
-void __attribute__((used)) SERCOM0_USART_InterruptHandler(void)
-{
-    /* Call the USART interrupt handler */
-    BSC_USART_InterruptHandler(&bsc_usart_objs[0]);
-}
 void __attribute__((used)) SERCOM1_USART_InterruptHandler(void)
 {
     /* Call the USART interrupt handler */
-    BSC_USART_InterruptHandler(&bsc_usart_objs[1]);
+    BSC_USART_InterruptHandler(&bsc_usart_objs[BSC_USART_SERCOM1]);
 }
-void __attribute__((used)) SERCOM2_USART_InterruptHandler(void)
-{
-    /* Call the USART interrupt handler */
-    BSC_USART_InterruptHandler(&bsc_usart_objs[2]);
-}
-void __attribute__((used)) SERCOM3_USART_InterruptHandler(void)
-{
-    /* Call the USART interrupt handler */
-    BSC_USART_InterruptHandler(&bsc_usart_objs[3]);
-}
+
 void __attribute__((used)) SERCOM4_USART_InterruptHandler(void)
 {
     /* Call the USART interrupt handler */
-    BSC_USART_InterruptHandler(&bsc_usart_objs[4]);
+    BSC_USART_InterruptHandler(&bsc_usart_objs[BSC_USART_SERCOM4]);
 }
+
 void __attribute__((used)) SERCOM5_USART_InterruptHandler(void)
 {
     /* Call the USART interrupt handler */
-    BSC_USART_InterruptHandler(&bsc_usart_objs[5]);
+    BSC_USART_InterruptHandler(&bsc_usart_objs[BSC_USART_SERCOM5]);
 }
 

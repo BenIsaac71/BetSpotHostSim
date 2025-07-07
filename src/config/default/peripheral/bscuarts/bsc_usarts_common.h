@@ -77,14 +77,19 @@
 
 typedef enum 
 {
-    BSC_USART_SERCOM0,
     BSC_USART_SERCOM1,
-    BSC_USART_SERCOM2,
-    BSC_USART_SERCOM3,
     BSC_USART_SERCOM4,
     BSC_USART_SERCOM5,
     BSC_USART_SERCOM_MAX
 } BSC_USART_SERCOM_ID;
+
+
+typedef enum 
+{
+    BSC_USART_BANK_A,
+    BSC_USART_BANK_B,
+    BSC_USART_BANK_MAX
+} BSC_USART_BANK;
 
 
 // *****************************************************************************
@@ -315,8 +320,6 @@ typedef enum
 #define MASTER_ADDRESS 0xFF
 #define GLOBAL_ADDRESS 0x00
 
-
-
 #define MAX_DATA_SIZE 0xFF
 typedef struct __packed
 {
@@ -329,6 +332,16 @@ typedef struct __packed
 } BS_MESSAGE_BUFFER;
 #define BS_MESSAGE_META_SIZE (sizeof(BS_MESSAGE_BUFFER) - MAX_DATA_SIZE)
 
+typedef struct
+{
+    BSC_USART_OBJECT *bsc_usart_obj; // pointer to the BSC USART object
+    BS_MESSAGE_BUFFER tx_buffer;
+    BS_MESSAGE_BUFFER rx_buffer;
+} MY_USART_OBJ;
+
+// Used by BSC_USART_OBJECT_INIT to map SERCOM_NUM to SERCOM DMAC TX amd RX channels assigned in mplabx
+#define SERCOM_DMA_MAP(SERCOM_NUM, TX_CH, RX_CH)           \
+    enum { SERCOM##SERCOM_NUM##_DMAC_TX_CHANNEL = TX_CH, SERCOM##SERCOM_NUM##_DMAC_RX_CHANNEL = RX_CH };
 
 // *****************************************************************************
 // DOM-IGNORE-BEGIN

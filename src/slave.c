@@ -1,74 +1,54 @@
-/*******************************************************************************
-  MPLAB Harmony Application Source File
-
-  Company:
-    Microchip Technology Inc.
-
-  File Name:
-    slave.c
-
-  Summary:
-    This file contains the source code for the MPLAB Harmony application.
-
-  Description:
-    This file contains the source code for the MPLAB Harmony application.  It
-    implements the logic of the application's state machine and it may call
-    API routines of other MPLAB Harmony modules in the system,such as drivers,
-    system services,and middleware.  However,it does not call any of the
-    system interfaces (such as the "Initialize" and "Tasks" functions) of any of
-    the modules in the system or make any assumptions about when those functions
-    are called.  That is the responsibility of the configuration-specific system
-    files.
- *******************************************************************************/
-
-// *****************************************************************************
-// *****************************************************************************
-// Section: Included Files
-// *****************************************************************************
-// *****************************************************************************
 #include "slave.h"
 
 // *****************************************************************************
-// *****************************************************************************
-// Section: Global Data Definitions
-// *****************************************************************************
-// *****************************************************************************
-#define DRV_USART_INDEX_MAX sizeof(usart_objs)/sizeof(MY_USART_OBJ)
-
-/* Task handles for slave tasks */
-TaskHandle_t xSlave0TaskHandle;
-TaskHandle_t xSlave1TaskHandle;
-
+void SLAVE_Tasks(SLAVE_DATA *slave_data);
 
 // *****************************************************************************
-void SLAVE0_Initialize(void)
+SLAVE_DATA slavesData[NUMBER_OF_SLAVES] =
 {
-    xTaskCreate(SLAVE0_Tasks, "SLV_Task0", 1024, NULL, tskIDLE_PRIORITY + 2, &xSlave0TaskHandle);
+    {
+        .my_usart_obj =
+        {
+            .bsc_usart_obj = NULL,
+            .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE0_DATA_STR) - 1, .from_addr = SLAVES_ADDRESS_START, .data = SLAVE0_DATA_STR FAKE_CRC},
+            .rx_buffer = {0}
+        },
+        .state = SLAVE_STATE_INIT,
+    },
+    {
+        .my_usart_obj =
+        {
+            .bsc_usart_obj = NULL,
+            .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE1_DATA_STR) - 1, .from_addr = SLAVES_ADDRESS_START+1, .data = SLAVE1_DATA_STR FAKE_CRC},
+            .rx_buffer = {0}
+        },
+        .state = SLAVE_STATE_INIT,
+    }
+};
 
-    MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE0];
-    BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM5, SLAVE0_ADDRESS);
+// *****************************************************************************
+void SLAVE_Initialize(void)
+{
+    for (int i = 0; i < NUMBER_OF_SLAVES; i++)
+    {
+        char slave_name[] = "SLAVE#_Task";
+        slave_name[5] = '0' + i;
 
-    my_usart_obj->bsc_usart_obj = bsc_usart_obj;
-    bsc_usart_obj->rx_semaphore = xSemaphoreCreateBinary();
-    BSC_USART_ReadCallbackRegister(bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)my_usart_obj);
+        SLAVE_DATA *slave_data = &slavesData[i];
+
+        xTaskCreate((TaskFunction_t)SLAVE_Tasks, slave_name, 1024, slave_data, tskIDLE_PRIORITY + 2, &slave_data->xTaskHandle);
+
+        MY_USART_OBJ *my_usart_obj = &slave_data->my_usart_obj;
+
+        my_usart_obj->bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM4 + i, SLAVES_ADDRESS_START+i);
+
+        BSC_USART_ReadCallbackRegister(my_usart_obj->bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)my_usart_obj);
+    }
 }
-
-void SLAVE1_Initialize(void)
-{
-    xTaskCreate(SLAVE1_Tasks, "SLV_Task1", 1024, NULL, tskIDLE_PRIORITY + 2, &xSlave1TaskHandle);
-
-    MY_USART_OBJ *my_usart_obj = &usart_objs[DRV_USART_INDEX_SLAVE1];
-    BSC_USART_OBJECT *bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM4, SLAVE1_ADDRESS);
-
-    my_usart_obj->bsc_usart_obj = bsc_usart_obj;
-    bsc_usart_obj->rx_semaphore = xSemaphoreCreateBinary();
-    BSC_USART_ReadCallbackRegister(bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)my_usart_obj);
-}
-
-
 // *****************************************************************************
-void SlaveTasks(SLAVE_DATA *slave_data, MY_USART_OBJ *my_usart_obj)
+void SLAVE_Tasks(SLAVE_DATA *slave_data)
 {
+    MY_USART_OBJ *my_usart_obj = &slave_data->my_usart_obj;
     char count = 'a';
     while (true)
     {
@@ -81,10 +61,10 @@ void SlaveTasks(SLAVE_DATA *slave_data, MY_USART_OBJ *my_usart_obj)
             {
                 // wait for a message from the master
                 begin_read(my_usart_obj);
-                block_rx_ready(my_usart_obj);
+                block_read(my_usart_obj);
                 // send a response back to the master
                 my_usart_obj->tx_buffer.data[0] = count;
-                block_write(my_usart_obj);
+                begin_write(my_usart_obj);
                 count = (count < 'z') ? (count + 1) : 'a';
             }
 
@@ -100,27 +80,6 @@ void SlaveTasks(SLAVE_DATA *slave_data, MY_USART_OBJ *my_usart_obj)
     }
 }
 
-SLAVE_DATA slave_data[NUMBER_OF_SLAVES] =
-{
-#if NUMBER_OF_SLAVES > 0
-    {SLAVE_STATE_INIT}, // Slave 0 data
-#endif
-#if NUMBER_OF_SLAVES > 1
-    {SLAVE_STATE_INIT}  // Slave 1 data;
-#endif
-};
-
-// *****************************************************************************
-
-void SLAVE0_Tasks(void *pvParameters)
-{
-    SlaveTasks(&slave_data[0], &usart_objs[DRV_USART_INDEX_SLAVE0]);
-}
-
-void SLAVE1_Tasks(void *pvParameters)
-{
-    SlaveTasks(&slave_data[1], &usart_objs[DRV_USART_INDEX_SLAVE1]);
-}
 
 /*******************************************************************************
  End of File
