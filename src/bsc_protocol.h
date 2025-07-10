@@ -9,27 +9,23 @@
 #define MAX_RGB_COLORS 20
 
 // *****************************************************************************
+// Host to Bet Spot Controller (BSC) operations
 typedef enum
 {
-   BSC_OP_RESET_REGISTRY = 0x01,
-   BSC_OP_SET_SENSOR_PARAMETRS,
-   BSC_OP_SET_SENSOR_MODE,
-   BSC_OP_SET_LED_COLORS,
+    BSC_OP_SET_TEST = 0x00,
+    BSC_OP_RESET_REGISTRY,
+    BSC_OP_SET_SENSOR_PARAMETRS,
+    BSC_OP_SET_SENSOR_MODE,
+    BSC_OP_SET_LED_COLORS,
 
-   BSC_OP_GET_REGISTRY = 0x81,
-   BSC_OP_GET_SENSOR_VALUES,
-   BSC_OP_GET_SENSOR_STATE,
+    BSC_OP_GET_REGISTRY = 0x80,
+    BSC_OP_GET_SENSOR_VALUES,
+    BSC_OP_GET_SENSOR_STATE,
 
-   BSC_OP_NACK = 0xFF,
+    BSC_OP_NACK = 0xFF,
 } BSC_OP_t;
 
-// *****************************************************************************
-typedef enum
-{
-    BSC_STATE_BUSY,
-    BSC_STATE_COMPLETE,
-    BSC_STATE_MISMATCH,
-} bsc_state_t;
+
 
 // *****************************************************************************
 typedef enum
@@ -94,13 +90,13 @@ typedef __PACKED_STRUCT
     sensor_parameters_t parameters; // sensor parameters for the mode
 } bsc_set_sensor_parameters_t;
 
-typedef struct 
+typedef struct
 {
     uint16_t data;
     uint16_t int_flag;
     uint16_t id;
     uint16_t ac_data;
-}sensor_values_t;
+} sensor_values_t;
 
 // *****************************************************************************
 typedef __PACKED_STRUCT
@@ -140,7 +136,6 @@ typedef __PACKED_STRUCT
     uint8_t index;
     BSC_OP_t command;
 } bsc_get_nack_t;
-
 
 // *****************************************************************************
 typedef __PACKED_STRUCT

@@ -4,6 +4,7 @@
 // *****************************************************************************
 #include "definitions.h"
 #include "bsc_usarts.h"
+#include "bsc_protocol.h"
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 extern "C" {

@@ -10,7 +10,7 @@ SLAVE_DATA slavesData[NUMBER_OF_SLAVES] =
         .my_usart_obj =
         {
             .bsc_usart_obj = NULL,
-            .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE0_DATA_STR) - 1, .from_addr = SLAVES_ADDRESS_START, .data = SLAVE0_DATA_STR FAKE_CRC},
+            .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE0_DATA_STR) - 1, .from_addr = SLAVES_ADDRESS_START,.op = BSC_OP_SET_TEST, .data = SLAVE0_DATA_STR FAKE_CRC},
             .rx_buffer = {0}
         },
         .state = SLAVE_STATE_INIT,
@@ -19,7 +19,7 @@ SLAVE_DATA slavesData[NUMBER_OF_SLAVES] =
         .my_usart_obj =
         {
             .bsc_usart_obj = NULL,
-            .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE1_DATA_STR) - 1, .from_addr = SLAVES_ADDRESS_START+1, .data = SLAVE1_DATA_STR FAKE_CRC},
+            .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE1_DATA_STR) - 1, .from_addr = SLAVES_ADDRESS_START + 1, .op = BSC_OP_SET_TEST, .data = SLAVE1_DATA_STR FAKE_CRC},
             .rx_buffer = {0}
         },
         .state = SLAVE_STATE_INIT,
@@ -40,7 +40,7 @@ void SLAVE_Initialize(void)
 
         MY_USART_OBJ *my_usart_obj = &slave_data->my_usart_obj;
 
-        my_usart_obj->bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM4 + i, SLAVES_ADDRESS_START+i);
+        my_usart_obj->bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM4 + i, SLAVES_ADDRESS_START + i);
 
         BSC_USART_ReadCallbackRegister(my_usart_obj->bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)my_usart_obj);
     }
@@ -49,7 +49,6 @@ void SLAVE_Initialize(void)
 void SLAVE_Tasks(SLAVE_DATA *slave_data)
 {
     MY_USART_OBJ *my_usart_obj = &slave_data->my_usart_obj;
-    char count = 'a';
     while (true)
     {
         /* Check the application's current state. */
@@ -63,9 +62,8 @@ void SLAVE_Tasks(SLAVE_DATA *slave_data)
                 begin_read(my_usart_obj);
                 block_read(my_usart_obj);
                 // send a response back to the master
-                my_usart_obj->tx_buffer.data[0] = count;
                 begin_write(my_usart_obj);
-                count = (count < 'z') ? (count + 1) : 'a';
+                my_usart_obj->tx_buffer.data[0] = (my_usart_obj->tx_buffer.data[0] < 'z') ? (my_usart_obj->tx_buffer.data[0] + 1) : 'a';
             }
 
             break;

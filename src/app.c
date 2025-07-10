@@ -4,6 +4,20 @@
 // *****************************************************************************
 APP_DATA appData;
 
+
+// *****************************************************************************
+void cmd_com_test(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
+{
+    bsc_multicast_set_messages_t msg =
+    {
+        .command = BSC_OP_SET_TEST,
+        //convert arvg[1] to integer and set it as count
+        .count = (argc > 1) ? atoi(argv[1]) : 1,
+    };
+    xQueueSend(master_message_queue, &msg, OSAL_WAIT_FOREVER);
+}
+
+
 // *****************************************************************************
 void cmd_set_reset_registry(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
 {
@@ -130,8 +144,9 @@ void cmd_get_sensor_state(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
 // *****************************************************************************
 static const SYS_CMD_DESCRIPTOR comm_cmds[] =
 {
-    {"srst", cmd_set_reset_registry,    ": Reset bet spot registry"},
-    {"spar", cmd_set_sensor_parameters, ": Set sensor parameters  "},
+    {"ctst", cmd_com_test,              ": Comm test command      "},
+    {"sreg", cmd_set_reset_registry,    ": Reset bet spot registry"},
+    {"sset", cmd_set_sensor_parameters, ": Set sensor parameters  "},
     {"smod", cmd_set_sensor_mode,       ": Set sensor mode        "},
     {"sled", cmd_set_led_colors,        ": Set leds color         "},
     {"greg", cmd_get_registry,          ": Get bet spot registry  "},
@@ -146,7 +161,7 @@ void APP_Initialize(void)
     MASTER_Initialize();
     SLAVE_Initialize();
     SYS_CMD_ADDGRP(comm_cmds, sizeof(comm_cmds) / sizeof(*comm_cmds), "bsc", ": Bet Spot Controller protocol commands");
-
+    
     appData.state = APP_STATE_INIT;
 }
 

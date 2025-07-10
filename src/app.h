@@ -5,7 +5,7 @@
 #include "definitions.h"
 #include "bsc_usarts.h"
 
-#define printu(...) fprintf(stderr, __VA_ARGS__)
+#define printu(...) SYS_CONSOLE_Print(0, __VA_ARGS__)
 
 #ifdef __cplusplus  // Provide C++ Compatibility
 extern "C" {
