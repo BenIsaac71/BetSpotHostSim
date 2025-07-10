@@ -16,7 +16,6 @@ typedef enum
     MASTER_STATE_SERVICE_TASKS,
 } MASTER_STATES;
 
-
 // *****************************************************************************
 #define SLAVES_ADDRESS_START  0x1
 #define NUMBER_OF_SLAVES 2
@@ -46,6 +45,8 @@ void rx_callback(MY_USART_OBJ *p_usart_obj);
 
 void MASTER_Initialize(void);
 
+extern QueueHandle_t master_message_queue;
+extern QueueHandle_t master_response_queue;
 
 #ifdef __cplusplus
 }

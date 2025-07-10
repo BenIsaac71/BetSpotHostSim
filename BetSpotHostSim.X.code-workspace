@@ -37,7 +37,12 @@
             "xmemory": "c",
             "algorithm": "c",
             "array": "c",
-            "vector": "c"
+            "vector": "c",
+            "ranges": "c",
+            "span": "c",
+            "string_view": "c",
+            "xlocale": "c",
+            "iosfwd": "c"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

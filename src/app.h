@@ -5,6 +5,8 @@
 #include "definitions.h"
 #include "bsc_usarts.h"
 
+#define printu(...) fprintf(stderr, __VA_ARGS__)
+
 #ifdef __cplusplus  // Provide C++ Compatibility
 extern "C" {
 #endif
@@ -12,7 +14,7 @@ extern "C" {
 // *****************************************************************************
 typedef enum
 {
-    APP_STATE_INIT=0,
+    APP_STATE_INIT = 0,
     APP_STATE_SERVICE_TASKS,
 } APP_STATES;
 
@@ -24,8 +26,8 @@ typedef struct
 } APP_DATA;
 
 // *****************************************************************************
-void APP_Initialize ( void );
-void APP_Tasks( void );
+void APP_Initialize(void);
+void APP_Tasks(void);
 
 #ifdef __cplusplus
 }

@@ -1,106 +1,176 @@
+//put the standard start ifdef guard here
+#ifndef _BSC_PROTOCOL_H
+#define _BSC_PROTOCOL_H
+
+#include "definitions.h"
+
 // *****************************************************************************
 #define MAX_BET_SPOTS 30
+#define MAX_RGB_COLORS 20
 
 // *****************************************************************************
 typedef enum
 {
-    BSC_SET_RESET_MANIFEST = 0x01,
-    BSC_GET_MANIFEST = 0x02,
-    BSC_SET_SENSOR_PARAMETER = 0x03,
-    BSC_GET_SENSOR_VALUES = 0x03,
-    BSC_SET_COMMIT_MANIFEST = 0x04,
-    BSC_SET_SENSOR_MODE = 0x05,
-    BSC_GET_SENSOR_STATE = 0x06,
-    BSC_GET_LED_COUNT = 0x07,
-} bsc_command_t;
+   BSC_OP_RESET_REGISTRY = 0x01,
+   BSC_OP_SET_SENSOR_PARAMETRS,
+   BSC_OP_SET_SENSOR_MODE,
+   BSC_OP_SET_LED_COLORS,
 
+   BSC_OP_GET_REGISTRY = 0x81,
+   BSC_OP_GET_SENSOR_VALUES,
+   BSC_OP_GET_SENSOR_STATE,
+
+   BSC_OP_NACK = 0xFF,
+} BSC_OP_t;
+
+// *****************************************************************************
 typedef enum
 {
-    BSC_STATE_BUSY = 0,
-    BSC_STATE_COMPLETE = 1,
-    BSC_STATE_MISMATCH = 2,
+    BSC_STATE_BUSY,
+    BSC_STATE_COMPLETE,
+    BSC_STATE_MISMATCH,
 } bsc_state_t;
 
 // *****************************************************************************
-// *****************************************************************************
-typedef struct
+typedef enum
 {
-    bsc_state_t state; // State of the bus discovery
-    uint8_t bs_count; // Count of bet spots
-    bsc_manifest_t devices[MAX_BET_SPOTS]; // Array of discovered devices, max 30
-} bsc_get_manifest_t;
+    BSC_SENSOR_STATE_NONE,      //no presence
+    BSC_SENSOR_STATE_IMMEDIATE, //immediate mode
+    BSC_SENSOR_STATE_HAND,      //hand detected
+    BSC_SENSOR_STATE_CHIP,      //chip detected
+} bsc_sensor_state_t;
 
 // *****************************************************************************
 typedef enum
 {
-    BS_MODE_DISABLED = 0,
-    BS_MODE_IMMEDIATE = 1,
-    BS_MODE_HAND = 2,
-    BS_MODE_CHIP = 3,
-    BS_MODE_COM_ERROR = 4,
-} bsc_mode_t;
-
-typedef struct
-{
-    uint16_t PS_CONF1;
-    uint16_t PS_CONF2;
-    uint16_t PS_CONF3;
-    uint16_t PS_THDL;
-    uint16_t PS_THDH;
-    uint16_t PS_CANC;
-    uint16_t PS_CONF4;
-} ps_sensor_set_parameters;
-
-typedef struct
-{
-    bsc_sensor_mode_t mode; // Sensor mode: 0 = disabled, 1 = immediate, 2 = hand, 3 = chip
-    uint8_t bs_count; // Count of bet spots
-    ps_sensor_set_parameters registers;
-} bsc_set_sensor_parameters_t;
-
-// *****************************************************************************
-typedef struct
-{
-    uint16_t PS_CH_OUT_DATA;
-    uint16_t PS_INT_FLAG;
-    uint16_t PS_ID;
-    uint8_t PS_AC_DATA;
-} ps_sensor_get_values_t;
-
-typedef struct
-{
-    uint8_t bs_count; // Count of bet spots
-    ps_sensor_get_values_t registers;
-} bsc_get_sensor_values_t;
-
-// *****************************************************************************
-typedef
-{
-    uint8_t bs_count_t;
-    bsc_mode_t mode; // Sensor mode: 0 = disabled, 1 = immediate, 2 = hand, 3 = chip
+    BSC_SENSOR_MODE_DISABLED,  // disable sensor from reporting events
+    BSC_SENSOR_MODE_IMMEDIATE, // Sensor mode: immediate
+    BSC_SENSOR_MODE_HAND,      // Sensor mode: hand
+    BSC_SENSOR_MODE_CHIP,      // Sensor mode: chip
 } bsc_sensor_mode_t;
 
 // *****************************************************************************
-typedef struct
+typedef __PACKED_STRUCT
 {
-    uint8_t sensor_state : 1; // Sensor state: 0 = inactive, 1 = active
-    uint8_t reserved     : 3; // Reserved bits for future use
-    bsc_mode_t mode      : 4; // Sensor mode: 0 = disabled, 1 = immediate, 2 = hand, 3 = chip, 4 = communication error
-} bsc_sensor_state_t;
+    uint8_t id: 4;
+    uint8_t port: 4;
+} bsc_address_t;
 
-typedef struct
+// *****************************************************************************
+typedef __PACKED_STRUCT
 {
-    uint8_t bs_count; // Count of bet spots
-    bsc_sensor_state_t states[MAX_BET_SPOTS];
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+} color_t;
+
+// *****************************************************************************
+typedef __PACKED_STRUCT
+{
+    bsc_address_t address;
+    uint8_t led_count;
+    uint8_t hw_version;
+    uint8_t serial_number[12];
+} bsc_get_registry_t;
+
+typedef bsc_get_registry_t  bs_registry_entry_t;
+
+// *****************************************************************************
+typedef __PACKED_STRUCT
+{
+    uint16_t conf1;
+    uint16_t conf2;
+    uint16_t conf3;
+    uint16_t thdl;
+    uint16_t thdh;
+    uint16_t canc;
+    uint16_t conf4;
+} sensor_parameters_t;
+
+typedef __PACKED_STRUCT
+{
+    uint8_t index;
+    bsc_sensor_mode_t mode;
+    sensor_parameters_t parameters; // sensor parameters for the mode
+} bsc_set_sensor_parameters_t;
+
+typedef struct 
+{
+    uint16_t data;
+    uint16_t int_flag;
+    uint16_t id;
+    uint16_t ac_data;
+}sensor_values_t;
+
+// *****************************************************************************
+typedef __PACKED_STRUCT
+{
+    uint8_t index;
+    uint16_t data;
+    uint16_t int_flag;
+    uint16_t id;
+    uint16_t ac_data;
+} bsc_get_get_sensor_values_t;
+
+// *****************************************************************************
+typedef __PACKED_STRUCT
+{
+    uint8_t index;
+    bsc_sensor_mode_t mode;
+} bsc_set_sensor_mode_t;
+
+// *****************************************************************************
+typedef __PACKED_STRUCT
+{
+    uint8_t index;
+    bsc_sensor_mode_t mode;
+    bsc_sensor_state_t state;
 } bsc_get_sensor_state_t;
 
 // *****************************************************************************
-typedef struct
+typedef __PACKED_STRUCT
 {
-    uint8_t bs_count; // Count of bet spots
-    uint8_t led_count[MAX_BET_SPOTS]; // Count of LEDs of bet spots
-} bsc_get_led_count_t;
+    uint8_t index;
+    color_t colors;  // all pixels same color
+} bsc_set_led_colors_t;
 
+// *****************************************************************************
+typedef __PACKED_STRUCT
+{
+    uint8_t index;
+    BSC_OP_t command;
+} bsc_get_nack_t;
+
+
+// *****************************************************************************
+typedef __PACKED_STRUCT
+{
+    BSC_OP_t command;
+    uint8_t count;  //count of zero indicates all devices in the registry
+    __PACKED_UNION
+    {
+        bsc_set_sensor_parameters_t sensor_parameter[MAX_BET_SPOTS];
+        bsc_set_sensor_mode_t sensor_mode[MAX_BET_SPOTS];
+        bsc_set_led_colors_t led_colors[MAX_BET_SPOTS];
+    } set;
+} bsc_multicast_set_messages_t;
+
+// *****************************************************************************
+typedef __PACKED_STRUCT
+{
+    BSC_OP_t command;
+    uint8_t count;
+    __PACKED_UNION
+    {
+        bsc_get_registry_t registry[MAX_BET_SPOTS];
+        bsc_get_get_sensor_values_t sensor_values[MAX_BET_SPOTS];
+        bsc_get_sensor_state_t sensor_state[MAX_BET_SPOTS];
+        bsc_get_nack_t nack;
+    } get;
+} bsc_multicast_get_messages_t;
+
+// *****************************************************************************
+#endif //_BSC_PROTOCOL_H
 
 /*******************************************************************************
 * BSC Protocol Overview
