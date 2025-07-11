@@ -14,6 +14,7 @@ typedef enum
 {
     BSC_OP_SET_TEST = 0x00,
     BSC_OP_RESET_REGISTRY,
+    
     BSC_OP_SET_SENSOR_PARAMETRS,
     BSC_OP_SET_SENSOR_MODE,
     BSC_OP_SET_LED_COLORS,
@@ -25,7 +26,23 @@ typedef enum
     BSC_OP_NACK = 0xFF,
 } BSC_OP_t;
 
+typedef enum
+{
+    BS_OP_SET_TEST = 0x00,
+    BS_OP_RESET_ADDRESS,
+    BS_OP_SET_ADDRESS,
+    
+    BS_OP_SET_SENSOR_PARAMETRS,
+    BS_OP_SET_SENSOR_MODE,
+    BS_OP_SET_LED_COLORS,
 
+    BS_OP_GET_REGISTRY = 0x81,
+    BS_OP_GET_SENSOR_VALUES,
+    BS_OP_GET_SENSOR_STATE
+} BS_OP_t;
+
+//reset address global slaves
+//get reistry o
 
 // *****************************************************************************
 typedef enum
@@ -46,10 +63,14 @@ typedef enum
 } bsc_sensor_mode_t;
 
 // *****************************************************************************
-typedef __PACKED_STRUCT
+typedef __PACKED_UNION
 {
-    uint8_t id: 4;
-    uint8_t port: 4;
+    uint8_t addr;
+    struct bsc_protocol
+    {
+        uint8_t id: 4;
+        uint8_t port: 4;
+    } location;
 } bsc_address_t;
 
 // *****************************************************************************

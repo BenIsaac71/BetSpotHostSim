@@ -1,5 +1,4 @@
 #include "definitions.h"
-#include "bsc_protocol.h"
 
 // *****************************************************************************
 APP_DATA appData;
@@ -187,7 +186,7 @@ void APP_Tasks(void)
                 {
                     bsc_get_registry_t *registry = &rsp.get.registry[i];
                     printu(" Address: %d.%d, LED Count: %d, HW Version: %02X, Serial Number: ",
-                           registry->address.port, registry->address.id,
+                           registry->address.location.port, registry->address.location.id,
                            registry->led_count,
                            registry->hw_version);
                     for (int i = 0; i < sizeof(registry->serial_number); i++)

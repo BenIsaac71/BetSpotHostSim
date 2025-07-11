@@ -1,39 +1,9 @@
-/*******************************************************************************
-  SERCOM Universal Synchronous/Asynchronous Receiver/Transmitter PLIB
-
-  Company
-    Light & Wonder
-
-  File Name
-    bsc_usart.c
-
-  Summary
-    BSC SERCOM peripheral library interface.
-
-  Description
-    This file defines the interface to the BSC to USART peripheral library. This
-    library provides access to and control of the associated peripheral
-    instance.
-
-  Remarks:
-    None.
-*******************************************************************************/
-
-// *****************************************************************************
-// *****************************************************************************
-// Section: Included Files
-// *****************************************************************************
-// *****************************************************************************
 #include "interrupts.h"
 #include "bsc_usarts.h"
 #include "definitions.h"
 
 void BSC_DMAC_RXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context);
 
-// *****************************************************************************
-// *****************************************************************************
-// // Section: Global Data
-// *****************************************************************************
 // *****************************************************************************
 /* SERCOM1 USART baud value for 100000 Hz baud rate */
 //#define BSC_USART_INT_BAUD_VALUE            (63788UL)
@@ -99,9 +69,7 @@ void BSC_USART_SetBank(BSC_USART_BANK bank)
 }
 
 // *****************************************************************************
-// *****************************************************************************
 // Section: BSC_USART Interface Routines
-// *****************************************************************************
 // *****************************************************************************
 
 void static BSC_USART_ErrorClear(BSC_USART_OBJECT *bsc_usart_obj)
@@ -192,6 +160,7 @@ BSC_USART_OBJECT *BSC_USART_Initialize(BSC_USART_SERCOM_ID sercom_id, uint8_t ad
     bsc_usart_obj->txCallback = NULL;
     bsc_usart_obj->errorStatus = USART_ERROR_NONE;
 
+    bsc_usart_obj->tx_semaphore = xSemaphoreCreateBinary();
     bsc_usart_obj->rx_semaphore = xSemaphoreCreateBinary();
 
     BSC_USART_SetBank(BSC_USART_BANK_A); // Default to Bank A

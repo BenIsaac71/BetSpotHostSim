@@ -21,22 +21,14 @@ typedef struct
 bs_object_t bs_objects[NUMBER_OF_SLAVES] =
 {
     {
-        .registry = {.address = {.port = 0, .id = 1}, .led_count = 20, .hw_version = 0x01, .serial_number = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C}},
-        .sensor_values = {.data = 1, .int_flag = 2, .id = 3, .ac_data = 4} // Initial sensor values
     },
     {
-        .registry =     {.address = {.port = 0, .id = 2}, .led_count = 20, .hw_version = 0x01, .serial_number = {0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C}},
-        .sensor_values = {.data = 17, .int_flag = 18, .id = 19, .ac_data = 20} // Initial sensor values
     },
 };
 int bs_count = NUMBER_OF_SLAVES; // Number of bet spots initialized
 
 MASTER_DATA masterData =
 {
-    .my_usart_obj =
-    {
-        .tx_buffer = {.to_addr = GLOBAL_ADDRESS, .data_len = sizeof(MASTER_DATA_STR) - 1,  .from_addr = MASTER_ADDRESS, .op = BSC_OP_SET_TEST, .data = MASTER_DATA_STR FAKE_CRC}
-    },
     .state = MASTER_STATE_INIT,
 };
 
@@ -70,23 +62,26 @@ void begin_write(MY_USART_OBJ *p_usart_obj)
 }
 
 // *****************************************************************************
-void block_read(MY_USART_OBJ *p_usart_obj)
+USART_ERROR MASTER_Block_Read(MY_USART_OBJ *p_usart_obj)
 {
     while (xSemaphoreTake(p_usart_obj->bsc_usart_obj->rx_semaphore, portMAX_DELAY) != pdTRUE); // Wait for RX semaphore
 
     USART_ERROR error = BSC_USART_ErrorGet(p_usart_obj->bsc_usart_obj); // Clear any errors
-    if (error == USART_ERROR_NONE)
+    if (error != USART_ERROR_NONE)
     {
-        if (p_usart_obj->rx_buffer.op == BSC_OP_SET_TEST)
-        {
-            BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
-            printu("RX:%s %02X->%02X[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, &msg->data);
-        }
+        printu("%s, RD Error: %d\n",pcTaskGetCurrentTaskName(), error);
     }
-    else
-    {
-        printu("RD Error: %d\n", error);
-    }
+    return error;
+}
+
+// *****************************************************************************
+void tx_callback(MY_USART_OBJ *p_usart_obj)
+{
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+
+    xSemaphoreGiveFromISR(p_usart_obj->bsc_usart_obj->tx_semaphore, &xHigherPriorityTaskWoken);
+
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 // *****************************************************************************
@@ -99,6 +94,17 @@ void rx_callback(MY_USART_OBJ *p_usart_obj)
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
+// *****************************************************************************
+void build_packet(BS_MESSAGE_BUFFER *tx_buffer, BS_OP_t op, uint8_t to_addr, uint8_t from_addr, char *data, size_t data_len)
+{
+    tx_buffer->to_addr = to_addr;
+    tx_buffer->from_addr = from_addr;
+    tx_buffer->op = op;
+    tx_buffer->data_len = data_len;
+    memcpy(tx_buffer->data, data, data_len);
+    *(uint32_t*)&tx_buffer->data[data_len] = 0xFF0000FF;
+    
+}
 // *****************************************************************************
 // BSC Object Functions
 // *****************************************************************************
@@ -141,9 +147,13 @@ bs_object_t *BS_Object_Get(int index)
 void MASTER_Reset_Registry()
 {
     printu("Resetting registry for all bet spots\n");
+
     for (int i = 0; i < NUMBER_OF_SLAVES; i++)
     {
         memset(&bs_objects[i].registry, 0, sizeof(bs_registry_entry_t)); // Clear the bet spot registry entry
+        //send a message to the all slaves to reset their bsc_address_t
+        //then one by one assign address and get registry
+
     }
     bs_count = 0;
 }
@@ -164,15 +174,15 @@ void MASTER_Set_Sensor_Parameters(bsc_multicast_set_messages_t *set)
         }
         if (params->mode == BSC_SENSOR_MODE_IMMEDIATE)
         {
-            bs_object->sensor_parameters[0] = params->parameters;
+            bs_object->sensor_parameters[BSC_SENSOR_MODE_IMMEDIATE-1] = params->parameters;
         }
         else if (params->mode == BSC_SENSOR_MODE_HAND)
         {
-            bs_object->sensor_parameters[1] = params->parameters;
+            bs_object->sensor_parameters[BSC_SENSOR_MODE_HAND-1] = params->parameters;
         }
         else if (params->mode == BSC_SENSOR_MODE_CHIP)
         {
-            bs_object->sensor_parameters[2] = params->parameters;
+            bs_object->sensor_parameters[BSC_SENSOR_MODE_CHIP-1] = params->parameters;
         }
         else
         {
@@ -313,29 +323,40 @@ void MASTER_Get_Sensor_State()
 
 }
 
+
 // *****************************************************************************
 void MASTER_Com_Test(MASTER_DATA *master_data, bsc_multicast_set_messages_t *set)
 {
-    MY_USART_OBJ *my_usart_obj = &master_data->my_usart_obj;
+    MY_USART_OBJ *p_usart_obj = &master_data->usart_obj;
+    static char master_string[] = MASTER_DATA_STR;
+
     for (int i = 0; i < set->count; i++)
     {
-        printu("  \nTransaction %c\n", my_usart_obj->tx_buffer.data[1]);
+        printu("  \nTransaction %c\n", master_string[0]);
+
+        build_packet(&p_usart_obj->tx_buffer, BSC_OP_SET_TEST, GLOBAL_ADDRESS, MASTER_ADDRESS, master_string, sizeof(master_string) - 1);
+
         for (int slave_address = SLAVES_ADDRESS_START; slave_address < SLAVES_ADDRESS_START + NUMBER_OF_SLAVES; slave_address++)
         {
             printu("M->S%d\n", slave_address);
             // build packet
-            my_usart_obj->tx_buffer.to_addr = slave_address;
+            p_usart_obj->tx_buffer.to_addr = slave_address;
 
             // message from host to slaves
-            begin_read(my_usart_obj);
-            begin_write(my_usart_obj);
+            begin_read(p_usart_obj);
+            begin_write(p_usart_obj);
 
             // response from slave to host
-            block_read(my_usart_obj);
+            if(MASTER_Block_Read(p_usart_obj) == USART_ERROR_NONE)
+            if (p_usart_obj->rx_buffer.op == BSC_OP_SET_TEST)
+            {
+                BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
+                printu("RX:%s %02X->%02X[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, &msg->data);
+            }
         }
-
-        my_usart_obj->tx_buffer.data[1] = my_usart_obj->tx_buffer.data[1] < 'Z' ? my_usart_obj->tx_buffer.data[1] + 1 : 'A';
-        vTaskDelay(pdMS_TO_TICKS(100));
+        
+        master_string[0] = master_string[0] < 'Z' ? master_string[0] + 1 : 'A';
+        //vTaskDelay(pdMS_TO_TICKS(10));
         LED_GREEN_Toggle();
     }
 }
@@ -343,14 +364,13 @@ void MASTER_Com_Test(MASTER_DATA *master_data, bsc_multicast_set_messages_t *set
 // *****************************************************************************
 void MASTER_Initialize(void)
 {
-
     xTaskCreate((TaskFunction_t)MASTER_Tasks, "MASTER_Task", 1024, &masterData, tskIDLE_PRIORITY + 2, &masterData.xTaskHandle);
 
-    MY_USART_OBJ *my_usart_obj = &masterData.my_usart_obj;
+    MY_USART_OBJ *p_usart_obj = &masterData.usart_obj;
 
-    my_usart_obj->bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM1, MASTER_ADDRESS);
+    p_usart_obj->bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM1, MASTER_ADDRESS);
 
-    BSC_USART_ReadCallbackRegister(my_usart_obj->bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)my_usart_obj);
+    BSC_USART_ReadCallbackRegister(p_usart_obj->bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)p_usart_obj);
 
     master_message_queue = xQueueCreate(2, sizeof(bsc_multicast_set_messages_t));
     master_response_queue = xQueueCreate(2, sizeof(bsc_multicast_get_messages_t));
@@ -359,7 +379,6 @@ void MASTER_Initialize(void)
 // *****************************************************************************
 void MASTER_Tasks(MASTER_DATA *master_data)
 {
-
     bsc_multicast_set_messages_t set;
 
     vTaskDelay(pdMS_TO_TICKS(10)); // Delay to allow other tasks to initialize

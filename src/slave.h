@@ -22,8 +22,15 @@ typedef enum
 typedef struct
 {
     TaskHandle_t xTaskHandle;
-    MY_USART_OBJ my_usart_obj;
+    MY_USART_OBJ usart_obj;
     SLAVE_STATES state;
+
+    bs_registry_entry_t registry;
+    sensor_parameters_t sensor_parameters[3]; // Sensor parameters for the bet spot immediate, hand
+    color_t colors[MAX_RGB_COLORS]; // RGB colors for the LEDs
+
+    sensor_values_t sensor_values; // Sensor values for the bet spot
+    bsc_sensor_state_t sensor_state;
 } SLAVE_DATA;
 
 // *****************************************************************************

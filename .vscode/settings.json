@@ -16,5 +16,6 @@
         "TXEN",
         "TXPO",
         "USART"
-    ]
+    ],
+    "sonarlint.pathToCompileCommands": "${workspaceFolder}\\build\\Debug\\compile_commands.json"
 }
