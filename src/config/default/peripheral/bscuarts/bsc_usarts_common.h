@@ -86,29 +86,7 @@ typedef struct
 } BSC_USART_OBJECT;
 
 
-// *****************************************************************************
-#define MASTER_ADDRESS 0xFF
-#define GLOBAL_ADDRESS 0x00
 
-#define MAX_DATA_SIZE 0xFF
-typedef struct __packed
-{
-    uint8_t to_addr;
-    uint8_t data_len;
-    uint8_t from_addr;
-    uint8_t op;
-    uint8_t data[MAX_DATA_SIZE];
-    uint32_t crc;
-} BS_MESSAGE_BUFFER;
-#define BS_MESSAGE_META_SIZE (sizeof(BS_MESSAGE_BUFFER) - MAX_DATA_SIZE)
-
-// *****************************************************************************
-typedef struct
-{
-    BSC_USART_OBJECT *bsc_usart_obj; // pointer to the BSC USART object
-    BS_MESSAGE_BUFFER tx_buffer;
-    BS_MESSAGE_BUFFER rx_buffer;
-} MY_USART_OBJ;
 
 // *****************************************************************************
 // Used by BSC_USART_OBJECT_INIT to map SERCOM_NUM to SERCOM DMAC TX amd RX channels assigned in mplabx

@@ -32,7 +32,7 @@ void cmd_set_sensor_parameters(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **arg
 {
     bsc_multicast_set_messages_t msg =
     {
-        .command =BSC_OP_SET_SENSOR_PARAMETRS,
+        .command =BSC_OP_SET_SENSOR_PARAMETERS,
         .count = 2,
         .set.sensor_parameter = {
             {

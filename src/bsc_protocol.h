@@ -15,7 +15,7 @@ typedef enum
     BSC_OP_SET_TEST = 0x00,
     BSC_OP_RESET_REGISTRY,
     
-    BSC_OP_SET_SENSOR_PARAMETRS,
+    BSC_OP_SET_SENSOR_PARAMETERS,
     BSC_OP_SET_SENSOR_MODE,
     BSC_OP_SET_LED_COLORS,
 
@@ -32,7 +32,7 @@ typedef enum
     BS_OP_RESET_ADDRESS,
     BS_OP_SET_ADDRESS,
     
-    BS_OP_SET_SENSOR_PARAMETRS,
+    BS_OP_SET_SENSOR_PARAMETERS,
     BS_OP_SET_SENSOR_MODE,
     BS_OP_SET_LED_COLORS,
 
@@ -184,6 +184,31 @@ typedef __PACKED_STRUCT
         bsc_get_nack_t nack;
     } get;
 } bsc_multicast_get_messages_t;
+
+
+// *****************************************************************************
+#define MASTER_ADDRESS 0xFF
+#define GLOBAL_ADDRESS 0x00
+
+#define MAX_DATA_SIZE 0xFF
+typedef struct __packed
+{
+    uint8_t to_addr;
+    uint8_t data_len;
+    uint8_t from_addr;
+    BS_OP_t op;
+    uint8_t data[MAX_DATA_SIZE];
+    uint32_t crc;
+} BS_MESSAGE_BUFFER;
+#define BS_MESSAGE_META_SIZE (sizeof(BS_MESSAGE_BUFFER) - MAX_DATA_SIZE)
+
+// *****************************************************************************
+typedef struct
+{
+    BSC_USART_OBJECT *bsc_usart_obj; // pointer to the BSC USART object
+    BS_MESSAGE_BUFFER tx_buffer;
+    BS_MESSAGE_BUFFER rx_buffer;
+} MY_USART_OBJ;
 
 // *****************************************************************************
 #endif //_BSC_PROTOCOL_H

@@ -55,7 +55,7 @@ void begin_read(MY_USART_OBJ *p_usart_obj)
 // *****************************************************************************
 void begin_write(MY_USART_OBJ *p_usart_obj)
 {
-    BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->tx_buffer;
+    BS_MESSAGE_BUFFER *msg = &p_usart_obj->tx_buffer;
 
     BSC_USART_Write(p_usart_obj->bsc_usart_obj, &p_usart_obj->tx_buffer, p_usart_obj->tx_buffer.data_len + BS_MESSAGE_META_SIZE);
     printu("TX:%s %02X->%02X[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, msg->data);
@@ -69,7 +69,7 @@ USART_ERROR MASTER_Block_Read(MY_USART_OBJ *p_usart_obj)
     USART_ERROR error = BSC_USART_ErrorGet(p_usart_obj->bsc_usart_obj); // Clear any errors
     if (error != USART_ERROR_NONE)
     {
-        printu("%s, RD Error: %d\n",pcTaskGetCurrentTaskName(), error);
+        printu("%s, RD Error: %d\n", pcTaskGetCurrentTaskName(), error);
     }
     return error;
 }
@@ -95,15 +95,15 @@ void rx_callback(MY_USART_OBJ *p_usart_obj)
 }
 
 // *****************************************************************************
-void build_packet(BS_MESSAGE_BUFFER *tx_buffer, BS_OP_t op, uint8_t to_addr, uint8_t from_addr, char *data, size_t data_len)
+void build_packet(BS_MESSAGE_BUFFER *tx_buffer, BS_OP_t op, uint8_t to_addr, uint8_t from_addr, char *data, uint8_t data_len)
 {
     tx_buffer->to_addr = to_addr;
     tx_buffer->from_addr = from_addr;
     tx_buffer->op = op;
     tx_buffer->data_len = data_len;
     memcpy(tx_buffer->data, data, data_len);
-    *(uint32_t*)&tx_buffer->data[data_len] = 0xFF0000FF;
-    
+    *(uint32_t *)&tx_buffer->data[data_len] = 0xFF0000FF;
+
 }
 // *****************************************************************************
 // BSC Object Functions
@@ -120,7 +120,7 @@ void MASTER_Nack(BSC_OP_t command, int index)
 
     bsc_get_nack_t *nack = &response.get.nack;
     nack->command = command; // Set the command that caused the NACK
-    nack->index = index; // Set the index of the bet spot that caused the NACK
+    nack->index = (uint8_t)index; // Set the index of the bet spot that caused the NACK
 
     xQueueSend(master_response_queue, &response, portMAX_DELAY); // Send the NACK response to the master response queue
 }
@@ -174,15 +174,15 @@ void MASTER_Set_Sensor_Parameters(bsc_multicast_set_messages_t *set)
         }
         if (params->mode == BSC_SENSOR_MODE_IMMEDIATE)
         {
-            bs_object->sensor_parameters[BSC_SENSOR_MODE_IMMEDIATE-1] = params->parameters;
+            bs_object->sensor_parameters[BSC_SENSOR_MODE_IMMEDIATE - 1] = params->parameters;
         }
         else if (params->mode == BSC_SENSOR_MODE_HAND)
         {
-            bs_object->sensor_parameters[BSC_SENSOR_MODE_HAND-1] = params->parameters;
+            bs_object->sensor_parameters[BSC_SENSOR_MODE_HAND - 1] = params->parameters;
         }
         else if (params->mode == BSC_SENSOR_MODE_CHIP)
         {
-            bs_object->sensor_parameters[BSC_SENSOR_MODE_CHIP-1] = params->parameters;
+            bs_object->sensor_parameters[BSC_SENSOR_MODE_CHIP - 1] = params->parameters;
         }
         else
         {
@@ -264,7 +264,7 @@ void MASTER_Get_Registry()
     bsc_multicast_get_messages_t response =
     {
         .command = BSC_OP_GET_REGISTRY,
-        .count = bs_count
+        .count = (uint8_t)bs_count
     };
 
     for (int i = 0; i < bs_count; i++)
@@ -283,14 +283,14 @@ void MASTER_Get_Sensor_Values()
     bsc_multicast_get_messages_t response =
     {
         .command = BSC_OP_GET_SENSOR_VALUES,
-        .count = bs_count,
+        .count = (uint8_t)bs_count,
     };
 
     for (int i = 0; i < bs_count; i++)
     {
         bsc_get_get_sensor_values_t *sensor_values = &response.get.sensor_values[i];
         bs_object_t *bs_object = BS_Object_Get(i);
-        sensor_values->index = i;
+        sensor_values->index = (uint8_t)i;
         sensor_values->data = bs_object->sensor_values.data;
         sensor_values->int_flag = bs_object->sensor_values.int_flag;
         sensor_values->id = bs_object->sensor_values.id;
@@ -306,7 +306,7 @@ void MASTER_Get_Sensor_State()
     bsc_multicast_get_messages_t response =
     {
         .command = BSC_OP_GET_SENSOR_STATE,
-        .count = bs_count,
+        .count = (uint8_t)bs_count,
     };
 
     for (int i = 0; i < bs_count; i++)
@@ -334,27 +334,27 @@ void MASTER_Com_Test(MASTER_DATA *master_data, bsc_multicast_set_messages_t *set
     {
         printu("  \nTransaction %c\n", master_string[0]);
 
-        build_packet(&p_usart_obj->tx_buffer, BSC_OP_SET_TEST, GLOBAL_ADDRESS, MASTER_ADDRESS, master_string, sizeof(master_string) - 1);
+        build_packet(&p_usart_obj->tx_buffer, BS_OP_SET_TEST, GLOBAL_ADDRESS, MASTER_ADDRESS, master_string, sizeof(master_string) - 1);
 
         for (int slave_address = SLAVES_ADDRESS_START; slave_address < SLAVES_ADDRESS_START + NUMBER_OF_SLAVES; slave_address++)
         {
             printu("M->S%d\n", slave_address);
             // build packet
-            p_usart_obj->tx_buffer.to_addr = slave_address;
+            p_usart_obj->tx_buffer.to_addr = (uint8_t)slave_address;
 
             // message from host to slaves
             begin_read(p_usart_obj);
             begin_write(p_usart_obj);
 
             // response from slave to host
-            if(MASTER_Block_Read(p_usart_obj) == USART_ERROR_NONE)
-            if (p_usart_obj->rx_buffer.op == BSC_OP_SET_TEST)
-            {
-                BS_MESSAGE_BUFFER *msg = (BS_MESSAGE_BUFFER *)&p_usart_obj->rx_buffer;
-                printu("RX:%s %02X->%02X[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, &msg->data);
-            }
+            if (MASTER_Block_Read(p_usart_obj) == USART_ERROR_NONE)
+                if (p_usart_obj->rx_buffer.op == BS_OP_SET_TEST)
+                {
+                    BS_MESSAGE_BUFFER *msg = &p_usart_obj->rx_buffer;
+                    printu("RX:%s %02X->%02X[%s]\n", pcTaskGetCurrentTaskName(), msg->from_addr, msg->to_addr, &msg->data);
+                }
         }
-        
+
         master_string[0] = master_string[0] < 'Z' ? master_string[0] + 1 : 'A';
         //vTaskDelay(pdMS_TO_TICKS(10));
         LED_GREEN_Toggle();
@@ -385,10 +385,8 @@ void MASTER_Tasks(MASTER_DATA *master_data)
 
     while (true)
     {
-        /* Check the masterlication's current state. */
         switch (master_data->state)
         {
-        /* Application's initial state. */
         case MASTER_STATE_INIT:
             master_data->state = MASTER_STATE_SERVICE_TASKS;
             break;
@@ -400,7 +398,7 @@ void MASTER_Tasks(MASTER_DATA *master_data)
                 case BSC_OP_RESET_REGISTRY:
                     MASTER_Reset_Registry();
                     break;
-                case BSC_OP_SET_SENSOR_PARAMETRS:
+                case BSC_OP_SET_SENSOR_PARAMETERS:
                     MASTER_Set_Sensor_Parameters(&set);
                     break;
                 case BSC_OP_SET_SENSOR_MODE:

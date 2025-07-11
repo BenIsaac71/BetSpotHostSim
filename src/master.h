@@ -43,7 +43,7 @@ void begin_read(MY_USART_OBJ *p_usart_obj);
 void begin_write(MY_USART_OBJ *p_usart_obj);
 void rx_callback(MY_USART_OBJ *p_usart_obj);
 void tx_callback(MY_USART_OBJ *p_usart_obj);
-void build_packet(BS_MESSAGE_BUFFER *tx_buffer, BS_OP_t op, uint8_t to_addr, uint8_t from_addr, char *data, size_t data_len);
+void build_packet(BS_MESSAGE_BUFFER *tx_buffer, BS_OP_t op, uint8_t to_addr, uint8_t from_addr, char *data, uint8_t data_len);
 char *pcTaskGetCurrentTaskName(void);
 
 void MASTER_Initialize(void);
