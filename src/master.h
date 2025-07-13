@@ -26,9 +26,9 @@ SERCOM_DMA_MAP(1, DMAC_CHANNEL_0,    DMAC_CHANNEL_3)        // harmony assignmen
 SERCOM_DMA_MAP(4, DMAC_CHANNEL_2,    DMAC_CHANNEL_5)        // harmony assignment
 SERCOM_DMA_MAP(5, DMAC_CHANNEL_1,    DMAC_CHANNEL_4)        // harmony assignment
 
-#define MASTER_DATA_STR "A-Master\0"
-#define SLAVE0_DATA_STR "z-Slave0\0"
-#define SLAVE1_DATA_STR "z-Slave1\0"
+#define MASTER_DATA_STR "\x00\x55\x55\x55\x55\0"
+#define SLAVE0_DATA_STR "\xFF\x11\x11\x11\x11\0"
+#define SLAVE1_DATA_STR "\xFF\x22\x22\x22\x22\0"
 
 // *****************************************************************************
 typedef struct
@@ -39,6 +39,10 @@ typedef struct
 } MASTER_DATA;
 
 // *****************************************************************************
+void print_hex_data(const void *data, size_t size);
+void print_tx_buffer(const MY_USART_OBJ *p_usart_obj);
+void print_rx_buffer(const MY_USART_OBJ *p_usart_obj);
+
 void begin_read(MY_USART_OBJ *p_usart_obj);
 void begin_write(MY_USART_OBJ *p_usart_obj);
 void rx_callback(MY_USART_OBJ *p_usart_obj);

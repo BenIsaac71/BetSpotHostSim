@@ -41,8 +41,13 @@ typedef enum
     BS_OP_GET_SENSOR_STATE
 } BS_OP_t;
 
-//reset address global slaves
-//get reistry o
+// *****************************************************************************
+typedef __PACKED_STRUCT
+{
+    uint8_t addr;
+    uint8_t serial_number[12];
+} bs_set_address_t;
+
 
 // *****************************************************************************
 typedef enum
@@ -56,17 +61,17 @@ typedef enum
 // *****************************************************************************
 typedef enum
 {
-    BSC_SENSOR_MODE_DISABLED,  // disable sensor from reporting events
     BSC_SENSOR_MODE_IMMEDIATE, // Sensor mode: immediate
     BSC_SENSOR_MODE_HAND,      // Sensor mode: hand
     BSC_SENSOR_MODE_CHIP,      // Sensor mode: chip
+    BSC_SENSOR_MODE_MAX        // Maximum sensor mode value
 } bsc_sensor_mode_t;
 
 // *****************************************************************************
 typedef __PACKED_UNION
 {
     uint8_t addr;
-    struct bsc_protocol
+    struct
     {
         uint8_t id: 4;
         uint8_t port: 4;

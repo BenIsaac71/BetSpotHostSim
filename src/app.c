@@ -11,8 +11,8 @@ void cmd_com_test(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
     {
         .command = BSC_OP_SET_TEST,
         //convert arvg[1] to integer and set it as count
-        .count = (argc > 1) ? atoi(argv[1]) : 1,
     };
+    *(uint32_t *)(&msg.count) = (argc > 1) ? atoi(argv[1]) : 1;
     xQueueSend(master_message_queue, &msg, OSAL_WAIT_FOREVER);
 }
 
@@ -22,7 +22,7 @@ void cmd_set_reset_registry(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
 {
     bsc_multicast_set_messages_t msg =
     {
-        .command =BSC_OP_RESET_REGISTRY,
+        .command = BSC_OP_RESET_REGISTRY,
     };
     xQueueSend(master_message_queue, &msg, OSAL_WAIT_FOREVER);
 }
@@ -32,7 +32,7 @@ void cmd_set_sensor_parameters(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **arg
 {
     bsc_multicast_set_messages_t msg =
     {
-        .command =BSC_OP_SET_SENSOR_PARAMETERS,
+        .command = BSC_OP_SET_SENSOR_PARAMETERS,
         .count = 2,
         .set.sensor_parameter = {
             {
@@ -71,7 +71,7 @@ void cmd_set_sensor_mode(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
 {
     bsc_multicast_set_messages_t msg =
     {
-        .command =BSC_OP_SET_SENSOR_MODE,
+        .command = BSC_OP_SET_SENSOR_MODE,
         .count = 2,
         .set.sensor_mode = {
             {
@@ -92,14 +92,14 @@ void cmd_set_led_colors(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
 {
     bsc_multicast_set_messages_t msg =
     {
-        .command =BSC_OP_SET_LED_COLORS,
+        .command = BSC_OP_SET_LED_COLORS,
         .count = 2,
         .set.led_colors =
         {
             {
                 .index = 1,
                 .colors = {0xFF, 0x00, 0x00}
-            }, 
+            },
             {
                 .index = 0,
                 .colors = {0x00, 0x00, 0xFF}
@@ -114,17 +114,17 @@ void cmd_get_registry(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
 {
     bsc_multicast_get_messages_t msg =
     {
-        .command =BSC_OP_GET_REGISTRY,
+        .command = BSC_OP_GET_REGISTRY,
     };
     xQueueSend(master_message_queue, &msg, OSAL_WAIT_FOREVER);
-}
+} 
 
 // *****************************************************************************
 void cmd_get_sensor_values(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
 {
     bsc_multicast_get_messages_t msg =
     {
-        .command =BSC_OP_GET_SENSOR_VALUES,
+        .command = BSC_OP_GET_SENSOR_VALUES,
     };
     xQueueSend(master_message_queue, &msg, OSAL_WAIT_FOREVER);
 }
@@ -134,7 +134,7 @@ void cmd_get_sensor_state(SYS_CMD_DEVICE_NODE *pCmdIO, int argc, char **argv)
 {
     bsc_multicast_get_messages_t msg =
     {
-        .command =BSC_OP_GET_SENSOR_STATE,
+        .command = BSC_OP_GET_SENSOR_STATE,
     };
     // Send the get sensor state message to the master task
     xQueueSend(master_message_queue, &msg, OSAL_WAIT_FOREVER);
@@ -159,8 +159,8 @@ void APP_Initialize(void)
     TC0_TimerStart();
     MASTER_Initialize();
     SLAVE_Initialize();
-    SYS_CMD_ADDGRP(comm_cmds, sizeof(comm_cmds) / sizeof(*comm_cmds), "bsc", ": Bet Spot Controller protocol commands");
-    
+    SYS_CMD_ADDGRP(comm_cmds, sizeof(comm_cmds) / sizeof(SYS_CMD_DESCRIPTOR), "bsc", ": Bet Spot Controller protocol commands");
+
     appData.state = APP_STATE_INIT;
 }
 
@@ -189,11 +189,7 @@ void APP_Tasks(void)
                            registry->address.location.port, registry->address.location.id,
                            registry->led_count,
                            registry->hw_version);
-                    for (int i = 0; i < sizeof(registry->serial_number); i++)
-                    {
-                        printu("%02X ", registry->serial_number[i]);
-                    }
-                    printu("\n");
+                    print_hex_data(registry->serial_number, sizeof(registry->serial_number));
                 }
                 break;
             case BSC_OP_GET_SENSOR_VALUES:
@@ -222,14 +218,14 @@ void APP_Tasks(void)
                 break;
             case BSC_OP_NACK:
                 printu("Invalid operation response received.\n");
-                printu(" Command: %d\n, Index: %d\n",rsp.get.nack.command, rsp.get.nack.index);
+                printu(" Command: %d\n, Index: %d\n", rsp.get.nack.command, rsp.get.nack.index);
                 break;
             default:
                 printu("Unknown command response: %d\n", rsp.command);
                 break;
             }
-            break;
         }
+        break;
     default:
         break;
     }

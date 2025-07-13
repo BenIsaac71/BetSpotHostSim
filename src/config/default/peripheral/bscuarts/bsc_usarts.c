@@ -531,7 +531,7 @@ void BSC_DMAC_RXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context)
     bsc_usart_obj->rxProcessedSize += DMAC_ChannelGetTransferredCount(bsc_usart_obj->dmac_channel_rx);
     uint8_t address = ((uint8_t *)bsc_usart_obj->rxBuffer)[0];
     // If all bytes received, finish up
-    if ((bsc_usart_obj->address == address || bsc_usart_obj->address == GLOBAL_ADDRESS) &&
+    if ((bsc_usart_obj->address == address || address == GLOBAL_ADDRESS) &&
             bsc_usart_obj->rxProcessedSize == bsc_usart_obj->rxSize)
     {
         bsc_usart_obj->rxBusyStatus = false;

@@ -18,20 +18,27 @@ typedef enum
     SLAVE_STATE_TRANSMITTING_RESPONSE,
 } SLAVE_STATES;
 
+
+typedef struct
+{
+    bs_registry_entry_t registry; // Pointer to the registry entry
+    color_t colors[MAX_RGB_COLORS]; // RGB colors for the LEDs
+    bsc_sensor_state_t sensor_state; // Sensor state for the bet spot
+    bsc_sensor_mode_t sensor_mode; // Sensor mode for the bet spot
+    sensor_parameters_t sensor_parameters[3]; // Sensor parameters for the bet spot immediate, hand, chip modes
+    sensor_values_t sensor_values; // Sensor values for the bet spot
+} bs_object_t;
+
 // *****************************************************************************
 typedef struct
 {
     TaskHandle_t xTaskHandle;
     MY_USART_OBJ usart_obj;
     SLAVE_STATES state;
-
-    bs_registry_entry_t registry;
-    sensor_parameters_t sensor_parameters[3]; // Sensor parameters for the bet spot immediate, hand
-    color_t colors[MAX_RGB_COLORS]; // RGB colors for the LEDs
-
-    sensor_values_t sensor_values; // Sensor values for the bet spot
-    bsc_sensor_state_t sensor_state;
-} SLAVE_DATA;
+    bs_object_t bs_object;
+    bool* p_check_in;    //simulate SPOT_CHECK_IN pull up input from previous bet spot
+    bool check_out;      // simulate SPOT_CHECK_OUT output to next bet spot
+} SLAVE_OBJ;
 
 // *****************************************************************************
 void SLAVE_Initialize(void);
