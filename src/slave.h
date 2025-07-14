@@ -33,11 +33,14 @@ typedef struct
 typedef struct
 {
     TaskHandle_t xTaskHandle;
-    MY_USART_OBJ usart_obj;
+    BSC_USART_OBJECT *p_usart_obj; // pointer to the BSC USART object
+    BS_MESSAGE_BUFFER tx_buffer;
+    BS_MESSAGE_BUFFER rx_buffer;
     SLAVE_STATES state;
     bs_object_t bs_object;
     bool* p_check_in;    //simulate SPOT_CHECK_IN pull up input from previous bet spot
     bool check_out;      // simulate SPOT_CHECK_OUT output to next bet spot
+    uint8_t test_count;
 } SLAVE_OBJ;
 
 // *****************************************************************************

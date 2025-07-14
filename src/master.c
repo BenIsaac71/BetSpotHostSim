@@ -9,14 +9,8 @@
 QueueHandle_t master_message_queue;
 QueueHandle_t master_response_queue;
 
+bs_object_t bs_objects[NUMBER_OF_SLAVES];
 
-bs_object_t bs_objects[NUMBER_OF_SLAVES] =
-{
-    {
-    },
-    {
-    },
-};
 int bs_count = NUMBER_OF_SLAVES; // Number of bet spots initialized
 
 MASTER_DATA masterData =
@@ -89,44 +83,49 @@ char *bs_op_to_string(BS_OP_t op)
 
 
 // *****************************************************************************
-void print_tx_buffer(const MY_USART_OBJ *p_usart_obj)
+void print_tx_buffer(BS_MESSAGE_BUFFER *p_tx_buf)
 {
+    //can we lock the 
     printu("TX:%s %02X->%02X:%s = ", pcTaskGetCurrentTaskName(),
-           p_usart_obj->tx_buffer.from_addr,
-           p_usart_obj->tx_buffer.to_addr,
-           bs_op_to_string(p_usart_obj->tx_buffer.op));
-    print_hex_data(p_usart_obj->tx_buffer.data, p_usart_obj->tx_buffer.data_len);
+           p_tx_buf->from_addr,
+           p_tx_buf->to_addr,
+           bs_op_to_string(p_tx_buf->op));
+    print_hex_data(p_tx_buf->data, p_tx_buf->data_len);
 }
 
 // *****************************************************************************
-void print_rx_buffer(const MY_USART_OBJ *p_usart_obj)
+void print_rx_buffer(BS_MESSAGE_BUFFER *p_rx_buf)
 {
-    printu("RX:%s %02X->%02X:%02X = ", pcTaskGetCurrentTaskName(),
-           p_usart_obj->rx_buffer.from_addr,
-           p_usart_obj->rx_buffer.to_addr,
-           p_usart_obj->rx_buffer.op);
-    print_hex_data(p_usart_obj->rx_buffer.data, p_usart_obj->rx_buffer.data_len);
+    printu("RX:%s %02X->%02X:%s = ", pcTaskGetCurrentTaskName(),
+           p_rx_buf->from_addr,
+           p_rx_buf->to_addr,
+           bs_op_to_string(p_rx_buf->op));
+    print_hex_data(p_rx_buf->data, p_rx_buf->data_len);
 }
 
 // *****************************************************************************
-void begin_read(MY_USART_OBJ *p_usart_obj)
+void begin_read(BSC_USART_OBJECT *p_usart_obj, BS_MESSAGE_BUFFER *p_rx_buf)
 {
-    BSC_USART_Read(p_usart_obj->bsc_usart_obj, &p_usart_obj->rx_buffer, sizeof(p_usart_obj->rx_buffer));
+    BSC_USART_Read(p_usart_obj, p_rx_buf, sizeof(BS_MESSAGE_BUFFER));
 }
 
 // *****************************************************************************
-void begin_write(MY_USART_OBJ *p_usart_obj)
+void begin_write(BSC_USART_OBJECT *p_usart_obj, BS_MESSAGE_BUFFER *p_tx_buf)
 {
-    BSC_USART_Write(p_usart_obj->bsc_usart_obj, &p_usart_obj->tx_buffer, p_usart_obj->tx_buffer.data_len + BS_MESSAGE_META_SIZE);
-    print_tx_buffer(p_usart_obj);
+    BSC_USART_Write(p_usart_obj, p_tx_buf, p_tx_buf->data_len + BS_MESSAGE_META_SIZE);
+}
+void block_write_complete(BSC_USART_OBJECT *p_usart_obj)
+{
+    while (xSemaphoreTake(p_usart_obj->tx_semaphore, portMAX_DELAY) != pdTRUE); // Wait for TX semaphore
+    printu("%s, TX Complete\n", pcTaskGetCurrentTaskName());
 }
 
 // *****************************************************************************
-USART_ERROR MASTER_Block_Read(MY_USART_OBJ *p_usart_obj)
+USART_ERROR block_read(BSC_USART_OBJECT *p_usart_obj)
 {
-    while (xSemaphoreTake(p_usart_obj->bsc_usart_obj->rx_semaphore, portMAX_DELAY) != pdTRUE); // Wait for RX semaphore
+    while (xSemaphoreTake(p_usart_obj->rx_semaphore, portMAX_DELAY) != pdTRUE); // Wait for RX semaphore
 
-    USART_ERROR error = BSC_USART_ErrorGet(p_usart_obj->bsc_usart_obj); // Clear any errors
+    USART_ERROR error = BSC_USART_ErrorGet(p_usart_obj); // Clear any errors
     if (error != USART_ERROR_NONE)
     {
         printu("%s, RD Error: %d\n", pcTaskGetCurrentTaskName(), error);
@@ -135,27 +134,27 @@ USART_ERROR MASTER_Block_Read(MY_USART_OBJ *p_usart_obj)
 }
 
 // *****************************************************************************
-void tx_callback(MY_USART_OBJ *p_usart_obj)
+void tx_callback(BSC_USART_OBJECT *p_usart_obj)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    xSemaphoreGiveFromISR(p_usart_obj->bsc_usart_obj->tx_semaphore, &xHigherPriorityTaskWoken);
+    xSemaphoreGiveFromISR(p_usart_obj->tx_semaphore, &xHigherPriorityTaskWoken);
 
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 // *****************************************************************************
-void rx_callback(MY_USART_OBJ *p_usart_obj)
+void rx_callback(BSC_USART_OBJECT *p_usart_obj)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
-    xSemaphoreGiveFromISR(p_usart_obj->bsc_usart_obj->rx_semaphore, &xHigherPriorityTaskWoken);
+    xSemaphoreGiveFromISR(p_usart_obj->rx_semaphore, &xHigherPriorityTaskWoken);
 
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 // *****************************************************************************
-void build_packet(BS_MESSAGE_BUFFER *tx_buffer, BS_OP_t op, uint8_t to_addr, uint8_t from_addr, char *data, uint8_t data_len)
+void build_packet(BS_MESSAGE_BUFFER *tx_buffer, BS_OP_t op, uint8_t to_addr, uint8_t from_addr, uint8_t *data, uint8_t data_len)
 {
     tx_buffer->to_addr = to_addr;
     tx_buffer->from_addr = from_addr;
@@ -206,57 +205,67 @@ bs_object_t *BS_Object_Get(int index)
 // *****************************************************************************
 void MASTER_Reset_Registry(MASTER_DATA *master_data)
 {
-    MY_USART_OBJ *p_usart_obj = &master_data->usart_obj;
+    BS_MESSAGE_BUFFER *p_tx_buffer = &master_data->tx_buffer;
+    BS_MESSAGE_BUFFER *p_rx_buffer = &master_data->rx_buffer;
+    BSC_USART_OBJECT *p_usart_obj = master_data->p_usart_obj;
+    bsc_get_registry_t registry_data;
+
     printu("Resetting registry for all bet spots\n");
 
-    build_packet(&p_usart_obj->tx_buffer, BS_OP_RESET_ADDRESS, GLOBAL_ADDRESS, MASTER_ADDRESS, NULL, 0);
-    begin_write(&masterData.usart_obj); // Send the reset address command to the bet spot
-    while (xSemaphoreTake(masterData.usart_obj.bsc_usart_obj->tx_semaphore, portMAX_DELAY) != pdTRUE); // Wait for TX semaphore, no slaves should respond
+    // Reset the address for all bet spots
+    build_packet(p_tx_buffer, BS_OP_RESET_ADDRESS, GLOBAL_ADDRESS, MASTER_ADDRESS, NULL, 0);
+    print_tx_buffer(p_tx_buffer);
+    begin_write(p_usart_obj, p_tx_buffer); // Send the reset address command to the bet spot
+    block_write_complete(p_usart_obj);
+    vTaskDelay(pdMS_TO_TICKS(5)); // Wait for the command to complete
+
+    bs_count = 0;
 
     for (int i = 0; i < NUMBER_OF_SLAVES; i++)
     {
+        printu("\nWorking on bet spot %d\n", i);
         bs_object_t *bs_object = BS_Object_Get(i);
-
-        build_packet(&p_usart_obj->tx_buffer, BS_OP_GET_REGISTRY, GLOBAL_ADDRESS, MASTER_ADDRESS, NULL, 0);
-
-        bsc_get_registry_t *rsp_registry = (bsc_get_registry_t *) &p_usart_obj->rx_buffer.data;
-        begin_read(p_usart_obj);
-        vTaskDelay(1); // Delay to allow the bet spot to process the command
-
-        begin_write(&masterData.usart_obj);//send get registry command to the bet spot
-
-        if ((MASTER_Block_Read(p_usart_obj) == USART_ERROR_NONE) &&
-                (p_usart_obj->rx_buffer.op == BS_OP_GET_REGISTRY) &&
-                (p_usart_obj->rx_buffer.to_addr == MASTER_ADDRESS) &&
-                (p_usart_obj->rx_buffer.data_len == sizeof(bs_registry_entry_t)))
+        //ask slave for its registry
+        bsc_get_registry_t *p_rsp_registry = (bsc_get_registry_t *) p_rx_buffer->data;
+        begin_read(p_usart_obj, p_rx_buffer);
+        build_packet(p_tx_buffer, BS_OP_GET_REGISTRY, GLOBAL_ADDRESS, MASTER_ADDRESS, NULL, 0);
+        print_tx_buffer(p_tx_buffer);
+        begin_write(p_usart_obj, p_tx_buffer);
+        if ((block_read(p_usart_obj) == USART_ERROR_NONE) &&
+                (p_rx_buffer->op == BS_OP_GET_REGISTRY) &&
+                (p_rx_buffer->to_addr == MASTER_ADDRESS) &&
+                (p_rx_buffer->from_addr == GLOBAL_ADDRESS) &&
+                (p_rx_buffer->data_len == sizeof(bs_registry_entry_t)))
         {
+            print_rx_buffer(p_rx_buffer);
+            // store the registry data for later
+            registry_data = *p_rsp_registry;
 
+            // now tell slave its new address
             bs_set_address_t msg_set_address;
-            msg_set_address.addr = (uint8_t)(i + SLAVES_ADDRESS_START);
-            memcpy(msg_set_address.serial_number, rsp_registry->serial_number, sizeof(msg_set_address.serial_number));
 
-            bsc_get_registry_t registry_data;
-            memcpy(&registry_data, rsp_registry, sizeof(bsc_get_registry_t));
-
-            build_packet(&p_usart_obj->tx_buffer, BS_OP_SET_ADDRESS, GLOBAL_ADDRESS, MASTER_ADDRESS, (char *)&msg_set_address, sizeof(msg_set_address));
-
-            begin_read(p_usart_obj);
-            vTaskDelay(1); // Delay to allow the bet spot to process the command
-            begin_write(&masterData.usart_obj);
-
-            if ((MASTER_Block_Read(p_usart_obj) == USART_ERROR_NONE) &&
-                    (p_usart_obj->rx_buffer.op == BS_OP_SET_ADDRESS) &&
-                    (p_usart_obj->rx_buffer.to_addr == MASTER_ADDRESS) &&
-                    (p_usart_obj->rx_buffer.data_len == 0))
+            begin_read(p_usart_obj, p_rx_buffer);
+            uint8_t new_address = (uint8_t)(i + SLAVES_ADDRESS_START);
+            msg_set_address.addr = new_address;
+            memcpy(msg_set_address.serial_number, registry_data.serial_number, sizeof(registry_data.serial_number));
+            build_packet(p_tx_buffer, BS_OP_SET_ADDRESS, GLOBAL_ADDRESS, MASTER_ADDRESS, (uint8_t *)&msg_set_address, sizeof(bs_set_address_t));
+            print_tx_buffer(p_tx_buffer);
+            begin_write(p_usart_obj, p_tx_buffer); // Send the set address command to the bet spot
+            if ((block_read(p_usart_obj) == USART_ERROR_NONE) &&
+                    (p_rx_buffer->op == BS_OP_SET_ADDRESS) &&
+                    (p_rx_buffer->to_addr == MASTER_ADDRESS) &&
+                    (p_rx_buffer->from_addr == new_address) &&
+                    (p_rx_buffer->data_len == 0))
             {
-                registry_data.address.addr = msg_set_address.addr;
+                print_rx_buffer(p_rx_buffer);
+                // slave acked new address, store the registry data
+                registry_data.address.addr = new_address;
                 bs_object->registry = registry_data;
-                printu("Bet spot %d address set to %02X\n", i, bs_object->registry.address.addr);
+                printu("Bet spot %d address set to %02X\n", i, new_address);
+                bs_count++;
             }
         }
-        vTaskDelay(pdMS_TO_TICKS(1)); // Delay to allow the bet spot to process the command
     }
-    bs_count = 0;
 }
 
 // *****************************************************************************
@@ -269,7 +278,7 @@ void MASTER_Set_Sensor_Parameters(bsc_multicast_set_messages_t *set)
         bsc_set_sensor_parameters_t *params = &set->set.sensor_parameter[i];
         bs_object_t *bs_object = BS_Object_Get_Valid(set->command, params->index);
 
-        if ((bs_object == NULL) && (params->mode < BSC_SENSOR_MODE_MAX))
+        if ((bs_object != NULL) && (params->mode < BSC_SENSOR_MODE_MAX))
         {
             bs_object->sensor_parameters[params->mode] = params->parameters;
             printu(" Index: %d, Mode: %d, Conf1: %02X, Conf2: %02X, Conf3: %02X, Thdl: %02X, Thdh: %02X, Canc: %02X, Conf4: %02X\n",
@@ -375,27 +384,29 @@ void MASTER_Get_Sensor_Values(MASTER_DATA *master_data)
         .count = (uint8_t)bs_count,
     };
 
-    MY_USART_OBJ *p_usart_obj = &master_data->usart_obj;
+    BS_MESSAGE_BUFFER *p_tx_buffer = &master_data->tx_buffer;
+    BS_MESSAGE_BUFFER *p_rx_buffer = &master_data->rx_buffer;
+    BSC_USART_OBJECT *p_usart_obj = master_data->p_usart_obj;
 
     for (int i = 0; i < bs_count; i++)
     {
         bs_object_t *bs_object = BS_Object_Get(i);
         uint8_t slave_addr = bs_object->registry.address.addr;
 
-        build_packet(&masterData.usart_obj.tx_buffer, BS_OP_GET_SENSOR_VALUES, GLOBAL_ADDRESS, slave_addr, NULL, 0);
-        begin_read(p_usart_obj);
+        build_packet(p_tx_buffer, BS_OP_GET_SENSOR_VALUES, GLOBAL_ADDRESS, slave_addr, NULL, 0);
+        begin_read(p_usart_obj, p_rx_buffer);
         vTaskDelay(1);
-        begin_write(&masterData.usart_obj);
+        begin_write(p_usart_obj, p_tx_buffer); // Send the get sensor values command to the bet spot
 
-        if ((MASTER_Block_Read(p_usart_obj) == USART_ERROR_NONE) &&
-                (p_usart_obj->rx_buffer.op == BS_OP_GET_SENSOR_VALUES) &&
-                (p_usart_obj->rx_buffer.to_addr == MASTER_ADDRESS) &&
-                (p_usart_obj->rx_buffer.from_addr == slave_addr) &&
-                (p_usart_obj->rx_buffer.data_len == sizeof(sensor_values_t)))
+        if ((block_read(p_usart_obj) == USART_ERROR_NONE) &&
+                (p_rx_buffer->op == BS_OP_GET_SENSOR_VALUES) &&
+                (p_rx_buffer->to_addr == MASTER_ADDRESS) &&
+                (p_rx_buffer->from_addr == slave_addr) &&
+                (p_rx_buffer->data_len == sizeof(sensor_values_t)))
         {
             bsc_get_get_sensor_values_t *sensor_values = &response.get.sensor_values[i];
 
-            bs_object->sensor_values = *(sensor_values_t *)p_usart_obj->rx_buffer.data;
+            bs_object->sensor_values = *(sensor_values_t *)p_rx_buffer->data;
 
             sensor_values->index = (uint8_t)i;
             sensor_values->data = bs_object->sensor_values.data;
@@ -435,32 +446,31 @@ void MASTER_Get_Sensor_State()
 // *****************************************************************************
 void MASTER_Com_Test(MASTER_DATA *master_data, bsc_multicast_set_messages_t *set)
 {
-    MY_USART_OBJ *p_usart_obj = &master_data->usart_obj;
-    static char master_string[] = MASTER_DATA_STR;
+    BS_MESSAGE_BUFFER *p_tx_buffer = &master_data->tx_buffer;
+    BS_MESSAGE_BUFFER *p_rx_buffer = &master_data->rx_buffer;
+    BSC_USART_OBJECT *p_usart_obj = master_data->p_usart_obj;
+
+    static uint8_t test_data[] = MASTER_TEST_DATA;
     int count = *(uint32_t *)(&set->count); // Get the count from the set message
 
     for (int i = 0; i < count; i++)
     {
-        printu("  \nTransaction %02X\n", master_string[0]);
+        printu("  \nTransaction %02X\n", test_data[0]);
 
-        build_packet(&p_usart_obj->tx_buffer, BS_OP_SET_TEST, GLOBAL_ADDRESS, MASTER_ADDRESS, master_string, sizeof(master_string) - 1);
 
         for (int slave_address = SLAVES_ADDRESS_START; slave_address < SLAVES_ADDRESS_START + NUMBER_OF_SLAVES; slave_address++)
         {
             printu("M->S%d\n", slave_address);
-            p_usart_obj->tx_buffer.to_addr = (uint8_t)slave_address;
-
+            build_packet(p_tx_buffer, BS_OP_SET_TEST, (uint8_t)slave_address, MASTER_ADDRESS, test_data, SIZE_OF_TEST_DATA);
             // message from host to slaves
-            begin_read(p_usart_obj);
-            begin_write(p_usart_obj);
+            begin_read(p_usart_obj, p_rx_buffer);
+            begin_write(p_usart_obj, p_tx_buffer);
 
             // response from slave to host
-            MASTER_Block_Read(p_usart_obj);
+            block_read(p_usart_obj);
+            print_rx_buffer(p_rx_buffer);
         }
-
-        master_string[0]++;
-
-        //vTaskDelay(pdMS_TO_TICKS(10));
+        test_data[0]++;
         LED_GREEN_Toggle();
     }
 }
@@ -470,12 +480,12 @@ void MASTER_Initialize(void)
 {
     xTaskCreate((TaskFunction_t)MASTER_Tasks, "MASTER_Task", 1024, &masterData, tskIDLE_PRIORITY + 2, &masterData.xTaskHandle);
 
-    MY_USART_OBJ *p_usart_obj = &masterData.usart_obj;
 
-    p_usart_obj->bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM1, MASTER_ADDRESS);
+    masterData.p_usart_obj = BSC_USART_Initialize(MASTER_SERCOM_ID, MASTER_ADDRESS);
+    BSC_USART_OBJECT *p_usart_obj = masterData.p_usart_obj;
 
-    BSC_USART_WriteCallbackRegister(p_usart_obj->bsc_usart_obj, (SERCOM_USART_CALLBACK)tx_callback, (uintptr_t)p_usart_obj);
-    BSC_USART_ReadCallbackRegister(p_usart_obj->bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)p_usart_obj);
+    BSC_USART_WriteCallbackRegister(p_usart_obj, (SERCOM_USART_CALLBACK)tx_callback, (uintptr_t)p_usart_obj);
+    BSC_USART_ReadCallbackRegister(p_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)p_usart_obj);
 
     master_message_queue = xQueueCreate(2, sizeof(bsc_multicast_set_messages_t));
     master_response_queue = xQueueCreate(2, sizeof(bsc_multicast_get_messages_t));

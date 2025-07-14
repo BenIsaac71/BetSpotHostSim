@@ -9,12 +9,6 @@ bool spotIn = true; // Simulate SPOT_CHECK_IN pull up input to first position be
 SLAVE_OBJ slave_objs[NUMBER_OF_SLAVES] =
 {
     {
-        .usart_obj =
-        {
-            .bsc_usart_obj = NULL,
-            .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE0_DATA_STR) - 1, .from_addr = SLAVES_ADDRESS_START, .op = BS_OP_SET_TEST, .data = SLAVE0_DATA_STR FAKE_CRC},
-        },
-        .state = SLAVE_STATE_INIT,
         .bs_object =
         {
             .registry = {
@@ -26,12 +20,6 @@ SLAVE_OBJ slave_objs[NUMBER_OF_SLAVES] =
         .p_check_in = &spotIn, // Simulate SPOT_CHECK_IN pull up input from previous bet spot
     },
     {
-        .usart_obj =
-        {
-            .bsc_usart_obj = NULL,
-            .tx_buffer = {.to_addr = MASTER_ADDRESS, .data_len = sizeof(SLAVE1_DATA_STR) - 1, .from_addr = SLAVES_ADDRESS_START + 1, .op = BS_OP_SET_TEST, .data = SLAVE1_DATA_STR FAKE_CRC},
-        },
-        .state = SLAVE_STATE_INIT,
         .bs_object =
         {
             .registry = {
@@ -47,28 +35,45 @@ SLAVE_OBJ slave_objs[NUMBER_OF_SLAVES] =
 // *****************************************************************************
 void SLAVE_Set_Test(SLAVE_OBJ *p_slave_obj)
 {
-    BS_MESSAGE_BUFFER *rsp = &p_slave_obj->usart_obj.tx_buffer;
-    rsp->data[0]++;
-    print_rx_buffer(&p_slave_obj->usart_obj);
-    begin_write(&p_slave_obj->usart_obj);
-}
+    BS_MESSAGE_BUFFER *p_tx_buffer = &p_slave_obj->tx_buffer;
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
+    BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
 
+    print_rx_buffer(p_rx_buffer);
+
+    uint8_t my_addr = p_slave_obj->bs_object.registry.address.addr;
+    p_tx_buffer->data[0] = p_slave_obj->test_count;
+    for (int i = 1; i < SIZE_OF_TEST_DATA; i++)
+    {
+        p_tx_buffer->data[i] = (uint8_t)((my_addr << 4) | my_addr);
+    }
+    build_packet(p_tx_buffer, BS_OP_SET_TEST, MASTER_ADDRESS, my_addr, p_tx_buffer->data, SIZE_OF_TEST_DATA);
+    begin_write(p_usart_obj, p_tx_buffer);
+    p_slave_obj->test_count++;
+}
+// *****************************************************************************
 void SLAVE_Reset_Address(SLAVE_OBJ *p_slave_obj)
 {
-    // This function is called to reset the address of the slave
-    // The implementation will depend on the specific requirements of the application
-    printu("Resetting address for slave %02X\n", p_slave_obj->usart_obj.rx_buffer.to_addr);
+    BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
+    bs_registry_entry_t *p_registry = &p_slave_obj->bs_object.registry;
 
-    p_slave_obj->usart_obj.bsc_usart_obj->address = 0; // Reset the address to 0
-    p_slave_obj->bs_object.registry.address.addr = 0; // Reset the address to 0
+    printu("Resetting address for slave %02X sn:", p_usart_obj->addr);
+
+    p_usart_obj->addr = 0; // Reset the address to 0
     p_slave_obj->check_out = false; // Reset the check out status
+    p_registry->address.addr = 0; // Reset the address to 0
+    print_hex_data(p_registry->serial_number, SIZEOF_SERIAL_NUMBER);
 }
 
+// *****************************************************************************
 void SLAVE_Set_Address(SLAVE_OBJ *p_slave_obj)
 {
-    bs_set_address_t *msg_set_address = (bs_set_address_t *)&p_slave_obj->usart_obj.rx_buffer.data;
+    BS_MESSAGE_BUFFER *p_tx_buffer = &p_slave_obj->tx_buffer;
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
+    BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
+
+    bs_set_address_t *msg_set_address = (bs_set_address_t *)p_rx_buffer->data;
     bs_registry_entry_t *registry = &p_slave_obj->bs_object.registry;
-    MY_USART_OBJ *p_usart_obj = &p_slave_obj->usart_obj;
 
     // This function is called to set the address of the slave
     // The implementation will depend on the specific requirements of the application
@@ -77,98 +82,133 @@ void SLAVE_Set_Address(SLAVE_OBJ *p_slave_obj)
         printu("Setting Slave address to %02X\n", msg_set_address->addr);
         p_slave_obj->bs_object.registry.address.addr = msg_set_address->addr;
 
-        p_usart_obj->bsc_usart_obj->address = msg_set_address->addr; // Set the address in the USART object
-        build_packet(&p_usart_obj->tx_buffer, BS_OP_SET_ADDRESS, MASTER_ADDRESS, p_usart_obj->bsc_usart_obj->address, NULL, 0);
-        begin_write(p_usart_obj); // Begin writing the response to the USART
+        p_usart_obj->addr = msg_set_address->addr; // Set the address in the USART object
+        build_packet(p_tx_buffer, BS_OP_SET_ADDRESS, MASTER_ADDRESS, p_usart_obj->addr, NULL, 0);
+        begin_write(p_usart_obj, p_tx_buffer); // Begin writing the response to the USART
         //now set your output to high to simulate SPOT_CHECK_OUT now next guy can respond
         p_slave_obj->check_out = true; // Set the check out status to true
     }
 }
 
+// *****************************************************************************
 void SLAVE_Set_Sensor_Parameters(SLAVE_OBJ *p_slave_obj)
 {
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
     // This function is called to set sensor parameters for the slave
     // The implementation will depend on the specific requirements of the application
-    printu("Setting sensor parameters for slave %02X\n", p_slave_obj->usart_obj.rx_buffer.to_addr);
+    printu("Setting sensor parameters for slave %02X\n", p_rx_buffer->to_addr);
 
     // Set sensor parameters logic here, if applicable
 }
+
+// *****************************************************************************
 void SLAVE_Set_Sensor_Mode(SLAVE_OBJ *p_slave_obj)
 {
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
     // This function is called to set the sensor mode for the slave
     // The implementation will depend on the specific requirements of the application
-    printu("Setting sensor mode for slave %02X\n", p_slave_obj->usart_obj.rx_buffer.to_addr);
+    printu("Setting sensor mode for slave %02X\n", p_rx_buffer->to_addr);
 
     // Set sensor mode logic here, if applicable
 }
+
+// *****************************************************************************
 void SLAVE_Set_LED_Colors(SLAVE_OBJ *p_slave_obj)
 {
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
     // This function is called to set LED colors for the slave
     // The implementation will depend on the specific requirements of the application
-    printu("Setting LED colors for slave %02X\n", p_slave_obj->usart_obj.rx_buffer.to_addr);
+    printu("Setting LED colors for slave %02X\n", p_rx_buffer->to_addr);
 
     // Set LED colors logic here, if applicable
 }
-// *****************************************************************************
+
 void SLAVE_Get_Registry(SLAVE_OBJ *p_slave_obj)
 {
+    BS_MESSAGE_BUFFER *p_tx_buffer = &p_slave_obj->tx_buffer;
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
+    BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
+
     uint8_t my_addr = p_slave_obj->bs_object.registry.address.addr;
-    uint8_t req_addr = p_slave_obj->usart_obj.rx_buffer.to_addr;
+    uint8_t req_addr = p_rx_buffer->to_addr;
 
     if (req_addr == GLOBAL_ADDRESS)
     {
-        // Add random delay to reduce collision
-        int delay_ms = 10 + rand() % 50; // 10-59 ms
+        if ((my_addr != GLOBAL_ADDRESS) || (*p_slave_obj->p_check_in == false))
+        {
+            return;
+        }
+
+        // Add delay to reduce UART collision
+        int delay_ms = 10 + rand() % 50;
         vTaskDelay(pdMS_TO_TICKS(delay_ms));
         printu("Getting registry for slave %02X (global, delayed %d ms)\n", my_addr, delay_ms);
     }
+    else if (req_addr != my_addr)
+    {
+        return;
+    }
     else
     {
+        // Direct request
         printu("Getting registry for slave %02X (direct)\n", my_addr);
     }
 
-    build_packet(&p_slave_obj->usart_obj.tx_buffer, BS_OP_GET_REGISTRY, MASTER_ADDRESS, my_addr, (char *)&p_slave_obj->bs_object.registry, sizeof(bs_registry_entry_t));
-    begin_write(&p_slave_obj->usart_obj);
+    // Common packet send logic
+    build_packet(p_tx_buffer,
+                 BS_OP_GET_REGISTRY,
+                 MASTER_ADDRESS,
+                 my_addr,
+                 (uint8_t *)&p_slave_obj->bs_object.registry,
+                 sizeof(bs_registry_entry_t));
+
+    begin_write(p_usart_obj, p_tx_buffer);
 }
 
+
+// *****************************************************************************
 void SLAVE_Get_Sensor_Values(SLAVE_OBJ *p_slave_obj)
 {
+    BS_MESSAGE_BUFFER *p_tx_buffer = &p_slave_obj->tx_buffer;
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
+    BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
+
     uint8_t my_addr = p_slave_obj->bs_object.registry.address.addr;
-    uint8_t req_addr = p_slave_obj->usart_obj.rx_buffer.to_addr;
+    uint8_t req_addr = p_rx_buffer->to_addr;
 
     if (req_addr != GLOBAL_ADDRESS)
     {
-        printu("Getting sensor values for slave %02X\n", p_slave_obj->usart_obj.rx_buffer.to_addr);
+        printu("Getting sensor values for slave %02X\n", req_addr);
 
-    build_packet(&p_slave_obj->usart_obj.tx_buffer, BS_OP_GET_SENSOR_VALUES, MASTER_ADDRESS, my_addr, (char *)&p_slave_obj->bs_object.sensor_values, sizeof(sensor_values_t));
-    begin_write(&p_slave_obj->usart_obj);
+        build_packet(p_tx_buffer, BS_OP_GET_SENSOR_VALUES, MASTER_ADDRESS, my_addr, (uint8_t *)&p_slave_obj->bs_object.sensor_values, sizeof(sensor_values_t));
+        begin_write(p_usart_obj, p_tx_buffer);
     }
 }
+
+// *****************************************************************************
 void SLAVE_Get_Sensor_State(SLAVE_OBJ *p_slave_obj)
 {
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
     // This function is called to get the sensor state for the slave
     // The implementation will depend on the specific requirements of the application
-    printu("Getting sensor state for slave %02X\n", p_slave_obj->usart_obj.rx_buffer.to_addr);
+    printu("Getting sensor state for slave %02X\n", p_rx_buffer->to_addr);
 
     // Prepare the response message
 }
 
-
-
 // *****************************************************************************
 void SLAVE_Block_Read(SLAVE_OBJ *p_slave_obj)
 {
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
+    BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
+
     // This function is called to read data from the USART
     // It waits for the RX semaphore to be available before proceeding)
-    while (xSemaphoreTake(p_slave_obj->usart_obj.bsc_usart_obj->rx_semaphore, portMAX_DELAY) != pdTRUE); // Wait for RX semaphore
-
-    USART_ERROR error = BSC_USART_ErrorGet(p_slave_obj->usart_obj.bsc_usart_obj); // Clear any errors
+    USART_ERROR error = block_read(p_usart_obj); // Clear any errors
     if (error == USART_ERROR_NONE)
     {
         // Process the received data
-        BS_MESSAGE_BUFFER *msg = &p_slave_obj->usart_obj.rx_buffer;
-
-        switch (msg->op)
+        switch (p_rx_buffer->op)
         {
         case BS_OP_SET_TEST:
             SLAVE_Set_Test(p_slave_obj);
@@ -198,7 +238,7 @@ void SLAVE_Block_Read(SLAVE_OBJ *p_slave_obj)
             SLAVE_Get_Sensor_State(p_slave_obj);
             break;
         default:
-            printu("Unknown operation received: %d\n", msg->op);
+            printu("Unknown operation received: %d\n", p_rx_buffer->op);
             break;
         }
     }
@@ -220,18 +260,20 @@ void SLAVE_Initialize(void)
 
         xTaskCreate((TaskFunction_t)SLAVE_Tasks, slave_name, 1024, p_slave_obj, tskIDLE_PRIORITY + 2, &p_slave_obj->xTaskHandle);
 
-        MY_USART_OBJ *p_usart_obj = &p_slave_obj->usart_obj;
+        p_slave_obj->p_usart_obj = BSC_USART_Initialize(SLAVE_SERCOM_ID_START + i, (uint8_t)(SLAVES_ADDRESS_START + i)); // Initialize USART for each slave
 
-        p_usart_obj->bsc_usart_obj = BSC_USART_Initialize(BSC_USART_SERCOM4 + i, (uint8_t)(SLAVES_ADDRESS_START + i));
-
-        BSC_USART_WriteCallbackRegister(p_usart_obj->bsc_usart_obj, (SERCOM_USART_CALLBACK)tx_callback, (uintptr_t)p_usart_obj);
-        BSC_USART_ReadCallbackRegister(p_usart_obj->bsc_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)p_usart_obj);
+        BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
+        BSC_USART_WriteCallbackRegister(p_usart_obj, (SERCOM_USART_CALLBACK)tx_callback, (uintptr_t)p_usart_obj);
+        BSC_USART_ReadCallbackRegister(p_usart_obj, (SERCOM_USART_CALLBACK)rx_callback, (uintptr_t)p_usart_obj);
     }
 }
+
 // *****************************************************************************
 void SLAVE_Tasks(SLAVE_OBJ *p_slave_obj)
 {
-    MY_USART_OBJ *p_usart_obj = &p_slave_obj->usart_obj;
+    BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
+    BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
+
     while (true)
     {
         /* Check the application's current state. */
@@ -240,10 +282,12 @@ void SLAVE_Tasks(SLAVE_OBJ *p_slave_obj)
         /* Application's initial state. */
         case SLAVE_STATE_INIT:
             // wait for a message from the master
-            begin_read(p_usart_obj);
-            SLAVE_Block_Read(p_slave_obj);
+            begin_read(p_usart_obj, p_rx_buffer);
+            p_slave_obj->state = SLAVE_STATE_WAITING_FOR_MESSAGE;
             break;
         case SLAVE_STATE_WAITING_FOR_MESSAGE:
+            SLAVE_Block_Read(p_slave_obj);
+            p_slave_obj->state = SLAVE_STATE_INIT; // Reset state to wait for the next message
             break;
         case SLAVE_STATE_TRANSMITTING_RESPONSE:
             break;

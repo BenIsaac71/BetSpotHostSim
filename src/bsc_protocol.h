@@ -86,13 +86,14 @@ typedef __PACKED_STRUCT
     uint8_t b;
 } color_t;
 
+#define SIZEOF_SERIAL_NUMBER 12
 // *****************************************************************************
 typedef __PACKED_STRUCT
 {
     bsc_address_t address;
     uint8_t led_count;
     uint8_t hw_version;
-    uint8_t serial_number[12];
+    uint8_t serial_number[SIZEOF_SERIAL_NUMBER];
 } bsc_get_registry_t;
 
 typedef bsc_get_registry_t  bs_registry_entry_t;
@@ -208,14 +209,6 @@ typedef struct __packed
 #define BS_MESSAGE_META_SIZE (sizeof(BS_MESSAGE_BUFFER) - MAX_DATA_SIZE)
 
 // *****************************************************************************
-typedef struct
-{
-    BSC_USART_OBJECT *bsc_usart_obj; // pointer to the BSC USART object
-    BS_MESSAGE_BUFFER tx_buffer;
-    BS_MESSAGE_BUFFER rx_buffer;
-} MY_USART_OBJ;
-
-// *****************************************************************************
 #endif //_BSC_PROTOCOL_H
 
 /*******************************************************************************
@@ -234,7 +227,7 @@ typedef struct
 control requests
 *******************************************************************************
 SET_RESET_MANIFEST
-    clear all know address to unique id mapping
+    clear all know addr to unique id mapping
     for calibration set up phase
 
 GET_MANIFEST
@@ -275,7 +268,7 @@ response
 
 SET_COMMIT MANIFEST
     [bs_count]
-        {address}
+        {addr}
     save manifest to non volatile for future boots
 
 SET SENSOR MODE

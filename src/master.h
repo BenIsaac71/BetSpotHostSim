@@ -19,35 +19,38 @@ typedef enum
 
 // *****************************************************************************
 #define SLAVES_ADDRESS_START  0x1
+#define MASTER_SERCOM_ID  BSC_USART_SERCOM1_ID
+#define SLAVE_SERCOM_ID_START BSC_USART_SERCOM4_ID
 #define NUMBER_OF_SLAVES 2
-#define FAKE_CRC "\xFF\x00\x00\xFF"
 
-SERCOM_DMA_MAP(1, DMAC_CHANNEL_0,    DMAC_CHANNEL_3)        // harmony assignment
-SERCOM_DMA_MAP(4, DMAC_CHANNEL_2,    DMAC_CHANNEL_5)        // harmony assignment
-SERCOM_DMA_MAP(5, DMAC_CHANNEL_1,    DMAC_CHANNEL_4)        // harmony assignment
+SERCOM_DMA_MAP(1, DMAC_CHANNEL_4,    DMAC_CHANNEL_5)        // harmony assignment
+SERCOM_DMA_MAP(4, DMAC_CHANNEL_6,    DMAC_CHANNEL_7)        // harmony assignment
+SERCOM_DMA_MAP(5, DMAC_CHANNEL_8,    DMAC_CHANNEL_9)        // harmony assignment
 
-#define MASTER_DATA_STR "\x00\x55\x55\x55\x55\0"
-#define SLAVE0_DATA_STR "\xFF\x11\x11\x11\x11\0"
-#define SLAVE1_DATA_STR "\xFF\x22\x22\x22\x22\0"
-
+#define MASTER_TEST_DATA {0x00,0x55,0x55,0x55,0x55}
+#define SIZE_OF_TEST_DATA 5
 // *****************************************************************************
 typedef struct
 {
     TaskHandle_t xTaskHandle;
-    MY_USART_OBJ usart_obj;
+    BSC_USART_OBJECT *p_usart_obj; // pointer to the BSC USART object
+    BS_MESSAGE_BUFFER tx_buffer;
+    BS_MESSAGE_BUFFER rx_buffer;
     MASTER_STATES state;
 } MASTER_DATA;
 
 // *****************************************************************************
 void print_hex_data(const void *data, size_t size);
-void print_tx_buffer(const MY_USART_OBJ *p_usart_obj);
-void print_rx_buffer(const MY_USART_OBJ *p_usart_obj);
+void print_tx_buffer(BS_MESSAGE_BUFFER *p_tx_buf);
+void print_rx_buffer(BS_MESSAGE_BUFFER *p_rx_buf);
 
-void begin_read(MY_USART_OBJ *p_usart_obj);
-void begin_write(MY_USART_OBJ *p_usart_obj);
-void rx_callback(MY_USART_OBJ *p_usart_obj);
-void tx_callback(MY_USART_OBJ *p_usart_obj);
-void build_packet(BS_MESSAGE_BUFFER *tx_buffer, BS_OP_t op, uint8_t to_addr, uint8_t from_addr, char *data, uint8_t data_len);
+USART_ERROR block_read(BSC_USART_OBJECT *p_usart_obj);
+
+void begin_read(BSC_USART_OBJECT* p_usart_obj, BS_MESSAGE_BUFFER *p_rsp_buf);
+void begin_write(BSC_USART_OBJECT *p_usart_obj, BS_MESSAGE_BUFFER *p_tx_buf);
+void rx_callback(BSC_USART_OBJECT *p_usart_obj);
+void tx_callback(BSC_USART_OBJECT *p_usart_obj);
+void build_packet(BS_MESSAGE_BUFFER *tx_buffer, BS_OP_t op, uint8_t to_addr, uint8_t from_addr, uint8_t *data, uint8_t data_len);
 char *pcTaskGetCurrentTaskName(void);
 
 void MASTER_Initialize(void);

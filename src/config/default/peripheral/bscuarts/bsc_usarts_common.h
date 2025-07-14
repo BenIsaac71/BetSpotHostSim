@@ -17,9 +17,9 @@ extern "C" {
 // *****************************************************************************
 typedef enum
 {
-    BSC_USART_SERCOM1,
-    BSC_USART_SERCOM4,
-    BSC_USART_SERCOM5,
+    BSC_USART_SERCOM1_ID,
+    BSC_USART_SERCOM4_ID,
+    BSC_USART_SERCOM5_ID,
     BSC_USART_SERCOM_MAX
 } BSC_USART_SERCOM_ID;
 
@@ -47,7 +47,7 @@ typedef struct
 
     DMAC_CHANNEL                        dmac_channel_rx;
 
-    uint8_t                             address;
+    uint8_t                             addr;
 
     sercom_registers_t                 *sercom_regs;
 

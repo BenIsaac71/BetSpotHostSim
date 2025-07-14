@@ -67,7 +67,6 @@ void vPortSVCHandler (void);
 void DebugMonitor_Handler (void);
 void xPortPendSVHandler (void);
 void xPortSysTickHandler (void);
-void DMAC_3_InterruptHandler (void);
 void DMAC_OTHER_InterruptHandler (void);
 void SERCOM1_USART_InterruptHandler (void);
 void SERCOM4_USART_InterruptHandler (void);

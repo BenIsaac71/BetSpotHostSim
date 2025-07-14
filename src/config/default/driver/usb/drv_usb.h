@@ -353,8 +353,8 @@ typedef struct
     /* This is a pointer to the event call back set function */
     void (*eventHandlerSet)(DRV_HANDLE handle, uintptr_t hReferenceData, DRV_USB_EVENT_CALLBACK eventHandler);
 
-    /* This is a pointer to the device address set function */
-    void (*deviceAddressSet)(DRV_HANDLE handle, uint8_t address);
+    /* This is a pointer to the device addr set function */
+    void (*deviceAddressSet)(DRV_HANDLE handle, uint8_t addr);
 
     /* This is a pointer to the device current speed get function */
     USB_SPEED (*deviceCurrentSpeedGet)(DRV_HANDLE handle);
