@@ -23,9 +23,10 @@ typedef enum
     BSC_OP_GET_SENSOR_VALUES,
     BSC_OP_GET_SENSOR_STATE,
 
-    BSC_OP_NACK = 0xFF,
+    BSC_OP_ERROR = 0xFF,
 } BSC_OP_t;
 
+// *****************************************************************************
 typedef enum
 {
     BS_OP_SET_TEST = 0x00,
@@ -40,6 +41,17 @@ typedef enum
     BS_OP_GET_SENSOR_VALUES,
     BS_OP_GET_SENSOR_STATE
 } BS_OP_t;
+// *****************************************************************************
+typedef enum
+{
+    BSC_ERROR_NONE = 0,
+    BSC_ERROR_TIMEOUT,
+    BSC_ERROR_INVALID_PARAMETER,    
+    BSC_ERROR_INVALID_OPERATION,
+    BSC_ERROR_INVALID_ADDRESS,
+    BSC_ERROR_INVALID_STATE,
+    USART_ERROR_BUSY,
+} BSC_ERROR_t;
 
 // *****************************************************************************
 typedef __PACKED_STRUCT
@@ -112,9 +124,14 @@ typedef __PACKED_STRUCT
 
 typedef __PACKED_STRUCT
 {
-    uint8_t index;
     bsc_sensor_mode_t mode;
-    sensor_parameters_t parameters; // sensor parameters for the mode
+    sensor_parameters_t parameters;
+}bs_set_sensor_parameters_t;
+
+typedef __PACKED_STRUCT
+{
+    uint8_t index;
+    bs_set_sensor_parameters_t sensor; // sensor parameters for the mode
 } bsc_set_sensor_parameters_t;
 
 typedef struct
@@ -129,10 +146,7 @@ typedef struct
 typedef __PACKED_STRUCT
 {
     uint8_t index;
-    uint16_t data;
-    uint16_t int_flag;
-    uint16_t id;
-    uint16_t ac_data;
+    sensor_values_t values;
 } bsc_get_get_sensor_values_t;
 
 // *****************************************************************************
@@ -146,7 +160,6 @@ typedef __PACKED_STRUCT
 typedef __PACKED_STRUCT
 {
     uint8_t index;
-    bsc_sensor_mode_t mode;
     bsc_sensor_state_t state;
 } bsc_get_sensor_state_t;
 
@@ -154,7 +167,7 @@ typedef __PACKED_STRUCT
 typedef __PACKED_STRUCT
 {
     uint8_t index;
-    color_t colors;  // all pixels same color
+    color_t color;  // all pixels same color
 } bsc_set_led_colors_t;
 
 // *****************************************************************************
@@ -162,7 +175,8 @@ typedef __PACKED_STRUCT
 {
     uint8_t index;
     BSC_OP_t command;
-} bsc_get_nack_t;
+    BSC_ERROR_t error; // Error code for the operation
+} bsc_get_error_t;
 
 // *****************************************************************************
 typedef __PACKED_STRUCT
@@ -187,7 +201,7 @@ typedef __PACKED_STRUCT
         bsc_get_registry_t registry[MAX_BET_SPOTS];
         bsc_get_get_sensor_values_t sensor_values[MAX_BET_SPOTS];
         bsc_get_sensor_state_t sensor_state[MAX_BET_SPOTS];
-        bsc_get_nack_t nack;
+        bsc_get_error_t error;
     } get;
 } bsc_multicast_get_messages_t;
 

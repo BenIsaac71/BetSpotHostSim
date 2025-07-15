@@ -27,7 +27,7 @@ SERCOM_DMA_MAP(1, DMAC_CHANNEL_4,    DMAC_CHANNEL_5)        // harmony assignmen
 SERCOM_DMA_MAP(4, DMAC_CHANNEL_6,    DMAC_CHANNEL_7)        // harmony assignment
 SERCOM_DMA_MAP(5, DMAC_CHANNEL_8,    DMAC_CHANNEL_9)        // harmony assignment
 
-#define MASTER_TEST_DATA {0x00,0x55,0x55,0x55,0x55}
+#define MASTER_TEST_DATA {0x00,0xA0,0xB0,0xC0,0xD0,0xE0,0xF0}
 #define SIZE_OF_TEST_DATA 5
 // *****************************************************************************
 typedef struct
@@ -41,6 +41,7 @@ typedef struct
 
 // *****************************************************************************
 void print_hex_data(const void *data, size_t size);
+void print_color(color_t *color);
 void print_tx_buffer(BS_MESSAGE_BUFFER *p_tx_buf);
 void print_rx_buffer(BS_MESSAGE_BUFFER *p_rx_buf);
 
