@@ -37,8 +37,6 @@ void SLAVE_Set_Test(SLAVE_OBJ *p_slave_obj)
     BS_MESSAGE_BUFFER *p_rx_buffer = &p_slave_obj->rx_buffer;
     BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
 
-    print_rx_buffer(p_rx_buffer);
-
     uint8_t my_addr = p_slave_obj->registry.address.addr;
     p_tx_buffer->data[0] = p_slave_obj->test_count;
     for (int i = 1; i < SIZE_OF_TEST_DATA; i++)
@@ -57,7 +55,7 @@ void SLAVE_Reset_Address(SLAVE_OBJ *p_slave_obj)
     bs_registry_entry_t *p_registry = &p_slave_obj->registry;
     uint8_t my_addr = p_slave_obj->registry.address.addr;
 
-    printu("Resetting address for slave %02X sn:", my_addr);
+    printu("  Resetting address for slave %02X sn:", my_addr);
     print_hex_data(p_registry->serial_number, SIZEOF_SERIAL_NUMBER);
     p_usart_obj->addr = 0;
     p_registry->address.addr = 0;
@@ -75,7 +73,7 @@ void SLAVE_Set_Address(SLAVE_OBJ *p_slave_obj)
     bs_registry_entry_t *registry = &p_slave_obj->registry;
     if (memcmp(msg_set_address->serial_number, registry->serial_number, sizeof(registry->serial_number)) == 0)
     {
-        printu("Setting Slave address to %02X\n", msg_set_address->addr);
+        printu("  Setting Slave address to %02X\n", msg_set_address->addr);
         p_slave_obj->registry.address.addr = msg_set_address->addr;
         p_usart_obj->addr = msg_set_address->addr;
         build_packet(p_tx_buffer, BS_OP_SET_ADDRESS, MASTER_ADDRESS, p_usart_obj->addr, NULL, 0);
@@ -97,7 +95,7 @@ void SLAVE_Set_Sensor_Parameters(SLAVE_OBJ *p_slave_obj)
     if (mode < BSC_SENSOR_MODE_MAX)
     {
         p_slave_obj->sensor_parameters[mode] = p_set_params->parameters; // Set the sensor parameters for the specified mode
-        printu("Setting sensor mode %d parameters for slave %02X: ", mode, my_addr);
+        printu("  Setting sensor mode %d parameters for slave %02X: ", mode, my_addr);
         print_hex_data((uint8_t *)&p_slave_obj->sensor_parameters[mode], sizeof(sensor_parameters_t));
         build_packet(p_tx_buffer, BS_OP_SET_SENSOR_PARAMETERS, MASTER_ADDRESS, my_addr, NULL, 0);
         begin_write(p_usart_obj, p_tx_buffer);
@@ -116,7 +114,7 @@ void SLAVE_Set_Sensor_Mode(SLAVE_OBJ *p_slave_obj)
     bsc_sensor_mode_t mode = *p_mode;
     if (mode < BSC_SENSOR_MODE_MAX)
     {
-        printu("Setting sensor mode %d for slave %02X: ", mode, my_addr);
+        printu("  Setting sensor mode %d for slave %02X: ", mode, my_addr);
         p_slave_obj->sensor_mode = mode; // Set the sensor parameters for the specified mode
         build_packet(p_tx_buffer, BS_OP_SET_SENSOR_MODE, MASTER_ADDRESS, my_addr, NULL, 0);
         begin_write(p_usart_obj, p_tx_buffer);
@@ -132,7 +130,7 @@ void SLAVE_Set_LED_Colors(SLAVE_OBJ *p_slave_obj)
     uint8_t my_addr = p_slave_obj->registry.address.addr;
 
     color_t *p_color = (color_t *)p_rx_buffer->data;
-    printu("Setting color for slave %02X: ", my_addr);
+    printu("  Setting color for slave %02X: ", my_addr);
     print_color(p_color);
     for (int i = 0; i < p_slave_obj->registry.led_count; i++)
     {
@@ -160,7 +158,7 @@ void SLAVE_Get_Registry(SLAVE_OBJ *p_slave_obj)
         }
         int delay_ms = 10 + rand() % 50;
         vTaskDelay(pdMS_TO_TICKS(delay_ms));
-        printu("Getting registry for slave %02X (global, delayed %d ms)\n", my_addr, delay_ms);
+        printu("  Getting registry for slave %02X (global, delayed %d ms)\n", my_addr, delay_ms);
     }
     else if (req_addr != my_addr)
     {
@@ -168,7 +166,7 @@ void SLAVE_Get_Registry(SLAVE_OBJ *p_slave_obj)
     }
     else
     {
-        printu("Getting registry for slave %02X (direct)\n", my_addr);
+        printu("  Getting registry for slave %02X (direct)\n", my_addr);
     }
     build_packet(p_tx_buffer,
                  BS_OP_GET_REGISTRY,
@@ -186,7 +184,7 @@ void SLAVE_Get_Sensor_Values(SLAVE_OBJ *p_slave_obj)
     BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
     uint8_t my_addr = p_slave_obj->registry.address.addr;
 
-    printu("Getting sensor values for slave %02X\n", my_addr);
+    printu("  Getting sensor values for slave %02X\n", my_addr);
     build_packet(p_tx_buffer, BS_OP_GET_SENSOR_VALUES, MASTER_ADDRESS, my_addr, (uint8_t *)&p_slave_obj->sensor_values, sizeof(sensor_values_t));
     begin_write(p_usart_obj, p_tx_buffer);
 }
@@ -198,7 +196,7 @@ void SLAVE_Get_Sensor_State(SLAVE_OBJ *p_slave_obj)
     BSC_USART_OBJECT *p_usart_obj = p_slave_obj->p_usart_obj;
     uint8_t my_addr = p_slave_obj->registry.address.addr;
 
-    printu("Getting sensor state for slave %02X\n", my_addr);
+    printu("  Getting sensor state for slave %02X\n", my_addr);
     build_packet(p_tx_buffer, BS_OP_GET_SENSOR_STATE, MASTER_ADDRESS, my_addr, (uint8_t *)&p_slave_obj->sensor_state, sizeof(bsc_sensor_state_t));
     begin_write(p_usart_obj, p_tx_buffer);
 }
@@ -230,7 +228,7 @@ void SLAVE_Block_Read(SLAVE_OBJ *p_slave_obj)
                 SLAVE_Get_Registry(p_slave_obj);
                 break;
             default:
-                printu("Unknown operation received: %d\n", p_rx_buffer->op);
+                printu("  Unknown operation received: %d\n", p_rx_buffer->op);
                 break;
             }
         }
@@ -266,14 +264,10 @@ void SLAVE_Block_Read(SLAVE_OBJ *p_slave_obj)
                 SLAVE_Get_Sensor_State(p_slave_obj);
                 break;
             default:
-                printu("Unknown operation received: %d\n", p_rx_buffer->op);
+                printu("  Unknown operation received: %d\n", p_rx_buffer->op);
                 break;
             }
         }
-    }
-    else
-    {
-        printu("RD Error: %d\n", error);
     }
 }
 

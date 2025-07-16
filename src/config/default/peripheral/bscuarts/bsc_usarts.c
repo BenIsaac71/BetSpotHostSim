@@ -2,6 +2,7 @@
 #include "bsc_usarts.h"
 #include "definitions.h"
 
+//void BSC_DMAC_TXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context);
 void BSC_DMAC_RXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context);
 
 // *****************************************************************************
@@ -144,6 +145,7 @@ BSC_USART_OBJECT *BSC_USART_Initialize(BSC_USART_SERCOM_ID sercom_id, uint8_t ad
         /* Do nothing */
     }
 
+    //DMAC_ChannelCallbackRegister(bsc_usart_obj->dmac_channel_tx, BSC_DMAC_TXChannelCallback, (uintptr_t)bsc_usart_obj);
     DMAC_ChannelCallbackRegister(bsc_usart_obj->dmac_channel_rx, BSC_DMAC_RXChannelCallback, (uintptr_t)bsc_usart_obj);
 
     /* Initialize instance object */
@@ -327,11 +329,16 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
 
     if ((buffer != NULL) && (bsc_usart_obj->txBusyStatus == false))
     {
+        xSemaphoreTake(bsc_usart_obj->tx_semaphore, 0);
+
         bsc_usart_obj->txBuffer = buffer;
         bsc_usart_obj->txSize = size;
         bsc_usart_obj->txBusyStatus = true;
 
         bsc_usart_obj->te_set();
+        if(bsc_usart_obj->bsc_usart_id == BSC_USART_SERCOM1_ID)
+            TP1_Set();
+
 
         size_t txSize = bsc_usart_obj->txSize;
 
@@ -358,8 +365,8 @@ bool BSC_USART_Write(BSC_USART_OBJECT *bsc_usart_obj, void *buffer, const size_t
         }
         bsc_usart_obj->txProcessedSize = processedSize;
 
-        uint8_t *dst = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
-        uint8_t *src = &((uint8_t *)bsc_usart_obj->txBuffer)[processedSize];
+        const uint8_t *dst = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
+        const uint8_t *src = &((uint8_t *)bsc_usart_obj->txBuffer)[processedSize];
 
         /* Set up the DMAC transfer */
         DMAC_ChannelTransfer(bsc_usart_obj->dmac_channel_tx, src, dst, bsc_usart_obj->txSize - processedSize);
@@ -518,6 +525,13 @@ void static __attribute__((used)) BSC_USART_ISR_ERR_Handler(BSC_USART_OBJECT *bs
     }
 }
 
+
+// void BSC_DMAC_TXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context)
+// {
+//     BSC_USART_OBJECT *bsc_usart_obj = (BSC_USART_OBJECT *)context;
+//     bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENSET = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
+// }
+
 void BSC_DMAC_RXChannelCallback(DMAC_TRANSFER_EVENT event, uintptr_t context)
 {
     BSC_USART_OBJECT *bsc_usart_obj = (BSC_USART_OBJECT *)context;
@@ -556,7 +570,7 @@ void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc
             if (temp & 0x0100U)
             {
                 // addr with 9th bit set, indicates start of packet
-                ((uint8_t *)bsc_usart_obj->rxBuffer)[0] = temp;
+                ((uint8_t *)bsc_usart_obj->rxBuffer)[0] = (uint8_t)temp;
                 bsc_usart_obj->rxProcessedSize = 1;
             }
             else if (bsc_usart_obj->rxProcessedSize == 1)
@@ -568,8 +582,8 @@ void static __attribute__((used)) BSC_USART_ISR_RX_Handler(BSC_USART_OBJECT *bsc
                 bsc_usart_obj->rxProcessedSize++;
 
                 // Set up the DMAC transfer
-                uint8_t *dst = &((uint8_t *)bsc_usart_obj->rxBuffer)[bsc_usart_obj->rxProcessedSize];
-                uint8_t *src = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
+                const uint8_t *dst = &((uint8_t *)bsc_usart_obj->rxBuffer)[bsc_usart_obj->rxProcessedSize];
+                const uint8_t *src = (uint8_t *)&bsc_usart_obj->sercom_regs->USART_INT.SERCOM_DATA;
                 DMAC_ChannelTransfer(bsc_usart_obj->dmac_channel_rx, src, dst, bsc_usart_obj->rxSize - bsc_usart_obj->rxProcessedSize);
 
                 // Disable RX and error interrupts
@@ -584,6 +598,9 @@ void static __attribute__((used)) BSC_USART_ISR_TXC_Handler(BSC_USART_OBJECT *bs
 {
     bsc_usart_obj->sercom_regs->USART_INT.SERCOM_INTENCLR = (uint8_t)SERCOM_USART_INT_INTENCLR_TXC_Msk;
     bsc_usart_obj->te_clr();
+    if(bsc_usart_obj->bsc_usart_id == BSC_USART_SERCOM1_ID)
+        TP1_Clear();
+
     bsc_usart_obj->txBusyStatus = false;
     bsc_usart_obj->txSize = 0U;
 

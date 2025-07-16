@@ -1,19 +1,19 @@
 Pin Number,Pin ID,Custom Name,Function,Mode, Direction,Latch,Pull Up,Pull Down,Drive Strength
-1,PA00,TP1,GPIO,Digital,Out,Low,,,NORMAL
+1,PA00,,Available,,,,,,NORMAL
 2,PA01,BANK_SEL_B,GPIO,Digital,Out,High,,,NORMAL
 3,PA02,BANK_SEL_A,GPIO,Digital,Out,High,,,NORMAL
 4,PA03,,Available,,,,,,NORMAL
-5,PB04,,Available,,,,,,NORMAL
-6,PB05,,Available,,,,,,NORMAL
-9,PB06,,Available,,,,,,NORMAL
-10,PB07,,Available,,,,,,NORMAL
+5,PB04,TP0,GPIO,Digital,Out,Low,,,NORMAL
+6,PB05,TP1,GPIO,Digital,Out,Low,,,NORMAL
+9,PB06,TP2,GPIO,Digital,Out,Low,,,NORMAL
+10,PB07,TP3,GPIO,Digital,Out,Low,,,NORMAL
 11,PB08,SERCOM4_TX,SERCOM4_PAD0,Digital,High Impedance,n/a,No,No,NORMAL
 12,PB09,,Available,,,,,,NORMAL
 13,PA04,,Available,,,,,,NORMAL
 14,PA05,,Available,,,,,,NORMAL
 15,PA06,,Available,,,,,,NORMAL
-16,PA07,,Available,,Out,,,,NORMAL
-17,PA08,TP2,GPIO,Digital,Out,Low,,,NORMAL
+16,PA07,,Available,,,,,,NORMAL
+17,PA08,,Available,,,,,,NORMAL
 18,PA09,,Available,,,,,,NORMAL
 19,PA10,,Available,,,,,,NORMAL
 20,PA11,,Available,,,,,,NORMAL

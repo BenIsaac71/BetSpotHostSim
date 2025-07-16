@@ -12,9 +12,10 @@ extern "C" {
 // *****************************************************************************
 #define DEBUG_LOGGING_ENABLED 1
 
-#if DEBUG_LOGGING_ENABLED
+#if DEBUG_LOGGING_ENABLED == 1
 #define printu(...) SYS_CONSOLE_Print(0, __VA_ARGS__)
-//#define printu(...) printf(__VA_ARGS__)
+#elif DEBUG_LOGGING_ENABLED == 2
+#define printu(...) printf(__VA_ARGS__)
 #else
 #define printu(...) do { if (0) SYS_CONSOLE_Print(0, __VA_ARGS__); } while (0)
 #endif

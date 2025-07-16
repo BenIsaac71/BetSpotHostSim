@@ -18,5 +18,9 @@
         "TXPO",
         "USART"
     ],
-    "sonarlint.pathToCompileCommands": "${workspaceFolder}\\build\\Debug\\compile_commands.json"
+    "sonarlint.pathToCompileCommands": "${workspaceFolder}\\build\\Debug\\compile_commands.json",
+    "sonarlint.connectedMode.project": {
+        "connectionId": "benisaac71",
+        "projectKey": "BenIsaac71_BetSpotHostSim"
+    }
 }
